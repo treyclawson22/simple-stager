@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/session'
-import { buildPrompt } from '@/lib/openai'
+import { buildPrompt } from '@/lib/claude'
 import { prisma } from '@simple-stager/database'
 import { WorkflowGoal, PromptAnswers } from '@simple-stager/shared'
 

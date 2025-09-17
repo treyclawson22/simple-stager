@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "turbo build",
+    "build": "turbo build && npx prisma generate --schema=packages/database/schema.prisma",
     "start": "cd apps/web && npm start",
     "dev": "turbo dev",
     "lint": "turbo lint",
