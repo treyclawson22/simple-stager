@@ -24,10 +24,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         isSignUp: { type: 'hidden' },
       },
       async authorize(credentials) {
-        console.log('Credentials authorize called:', credentials)
-        
         if (!credentials?.email || !credentials?.password) {
-          console.log('Missing email or password')
           return null
         }
 
@@ -36,106 +33,44 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const name = credentials.name as string
         const isSignUp = credentials.isSignUp === 'true'
 
-        console.log('Auth attempt:', { email, isSignUp })
-
         try {
           if (isSignUp) {
-            console.log('Sign up flow')
-            // Sign up flow
-            const existingUser = await prisma.user.findUnique({
-              where: { email }
-            })
+            // Sign up flow - handled by separate API now
+            return null
+          }
 
-            if (existingUser) {
-              console.log('User already exists')
-              throw new Error('User already exists with this email')
-            }
+          // Sign in flow
+          const user = await prisma.user.findUnique({
+            where: { email }
+          })
 
-            const hashedPassword = await bcrypt.hash(password, 12)
-            const referralCode = generateReferralCode()
+          if (!user) {
+            return null
+          }
 
-            console.log('Creating new user...')
+          if (user.authProvider !== 'password') {
+            return null
+          }
 
-            const user = await prisma.user.create({
-              data: {
-                email,
-                name: name || null,
-                authProvider: 'password',
-                credits: 3,
-                referralCode,
-              }
-            })
+          // Get password hash
+          const passwordRecord = await prisma.password.findUnique({
+            where: { userId: user.id }
+          })
 
-            console.log('User created:', user.id)
+          if (!passwordRecord) {
+            return null
+          }
 
-            // Store password hash
-            await prisma.password.create({
-              data: {
-                userId: user.id,
-                hash: hashedPassword,
-              }
-            })
+          const isValid = await bcrypt.compare(password, passwordRecord.hash)
+          
+          if (!isValid) {
+            return null
+          }
 
-            console.log('Password stored')
-
-            // Add initial trial credits to ledger
-            await prisma.creditLedger.create({
-              data: {
-                userId: user.id,
-                delta: 3,
-                reason: 'trial',
-                meta: JSON.stringify({ message: 'Welcome! Free trial credits' }),
-              },
-            })
-
-            console.log('Credits added, returning user')
-
-            return {
-              id: user.id,
-              email: user.email,
-              name: user.name,
-            }
-          } else {
-            console.log('Sign in flow')
-            // Sign in flow
-            const user = await prisma.user.findUnique({
-              where: { email }
-            })
-
-            if (!user) {
-              console.log('User not found')
-              return null
-            }
-
-            if (user.authProvider !== 'password') {
-              console.log('User exists but not password auth')
-              return null
-            }
-
-            // Get password hash
-            const passwordRecord = await prisma.password.findUnique({
-              where: { userId: user.id }
-            })
-
-            if (!passwordRecord) {
-              console.log('No password record found')
-              return null
-            }
-
-            const isValid = await bcrypt.compare(password, passwordRecord.hash)
-            
-            if (!isValid) {
-              console.log('Invalid password')
-              return null
-            }
-
-            console.log('Password valid, returning user')
-
-            return {
-              id: user.id,
-              email: user.email,
-              name: user.name,
-            }
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
           }
         } catch (error) {
           console.error('Auth error:', error)

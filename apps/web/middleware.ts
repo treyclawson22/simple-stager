@@ -8,10 +8,6 @@ export default auth((req) => {
   const publicRoutes = [
     '/',
     '/signup',
-    '/dashboard',
-    '/history',
-    '/billing',
-    '/referrals',
     '/api/test',
     '/api/workflows',
     '/uploads',
