@@ -6,7 +6,18 @@ import { usePathname } from 'next/navigation'
 import { User, Plan } from '@simple-stager/database'
 
 interface DashboardNavProps {
-  user?: (User & { plan: Plan | null }) | null
+  user?: (User & { plans?: Plan[] }) | null
+}
+
+// Helper function to check if user is admin
+function isAdmin(user: User): boolean {
+  const adminEmails = [
+    'trey@simplestager.com',
+    'admin@simplestager.com',
+    // Add your admin emails here
+  ]
+  
+  return adminEmails.includes(user.email)
 }
 
 export function DashboardNav({ user }: DashboardNavProps) {
@@ -63,6 +74,19 @@ export function DashboardNav({ user }: DashboardNavProps) {
               >
                 Settings
               </Link>
+              
+              {user && isAdmin(user) && (
+                <Link
+                  href="/admin"
+                  className="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium hover:border-gray-300 hover:text-gray-700"
+                  style={{ 
+                    borderColor: pathname === '/admin' ? '#089AB2' : 'transparent',
+                    color: pathname === '/admin' ? '#464646' : '#6B7280'
+                  }}
+                >
+                  Admin
+                </Link>
+              )}
             </div>
           </div>
           

@@ -8,21 +8,21 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  name          String?
-  image         String?
-  authProvider  String   // google | apple | password
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  planId        String?
-  credits       Int      @default(3)
-  referralCode  String   @unique @default(cuid())
-  referredById  String?
-  referredBy    User?    @relation("UserReferrals", fields: [referredById], references: [id])
-  referrals     User[]   @relation("UserReferrals")
+  id               String   @id @default(cuid())
+  email            String   @unique
+  name             String?
+  image            String?
+  authProvider     String   // google | apple | password
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  credits          Int      @default(3)
+  referralCode     String   @unique @default(cuid())
+  referredById     String?
+  stripeCustomerId String?  @unique
+  referredBy       User?    @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals        User[]   @relation("UserReferrals")
   
-  plan          Plan?         @relation(fields: [planId], references: [id])
+  plans         Plan[]
   integrations  Integration[]
   workflows     Workflow[]
   creditLedger  CreditLedger[]
@@ -32,13 +32,19 @@ model User {
 }
 
 model Plan {
-  id         String @id
-  name       String
-  priceCents Int
-  credits    Int
-  interval   String // monthly | yearly
-  users      User[]
+  id                   String    @id @default(cuid())
+  userId               String
+  name                 String    // entry | showcase | prime | prestige | portfolio
+  stripeSubscriptionId String?   @unique
+  status               String?   // active | canceled | past_due | etc.
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
   
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, name])
   @@map("plans")
 }
 

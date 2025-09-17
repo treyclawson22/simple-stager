@@ -67,7 +67,11 @@ const plans: PlanOption[] = [
 ]
 
 export function InteractivePlans({ user }: InteractivePlansProps) {
-  const currentPlanName = user?.plan?.name || 'Free Credits'
+  // Find the user's active plan
+  const activePlan = user?.plans?.find((plan: any) => plan.status === 'active')
+  const currentPlanName = activePlan?.name || 'Free Credits'
+  const isFreePlan = activePlan && !activePlan.stripeSubscriptionId
+  
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
   const [isConfirming, setIsConfirming] = useState(false)
   
@@ -88,21 +92,44 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
     
     setIsConfirming(true)
     
-    // TODO: Implement actual plan change API call
     try {
-      console.log(`Changing plan from ${currentPlanName} to ${selectedPlan}`)
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Map plan names to IDs for Stripe
+      const planIdMap: Record<string, string> = {
+        'Entry': 'entry',
+        'Showcase': 'showcase', 
+        'Prime': 'prime',
+        'Prestige': 'prestige',
+        'Portfolio': 'portfolio'
+      }
       
-      // Reset state after successful change
-      setSelectedPlan(null)
-      
-      // TODO: Show success message and refresh data
-      alert(`Plan changed to ${selectedPlan} successfully!`)
+      const planId = planIdMap[selectedPlan]
+      if (!planId) {
+        throw new Error('Invalid plan selection')
+      }
+
+      // Create Stripe checkout session
+      const response = await fetch('/api/stripe/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          planId,
+          type: 'subscription'
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create checkout session')
+      }
+
+      // Redirect to Stripe checkout
+      window.location.href = data.url
     } catch (error) {
-      console.error('Failed to change plan:', error)
-      alert('Failed to change plan. Please try again.')
-    } finally {
+      console.error('Failed to start checkout:', error)
+      alert('Failed to start checkout. Please try again.')
       setIsConfirming(false)
     }
   }
@@ -181,7 +208,13 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
               </h4>
               <div className="flex flex-col items-end">
                 {plan.name === currentPlanName && (
-                  <span className="text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded-full font-medium mb-1">Current</span>
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium mb-1 ${
+                    isFreePlan 
+                      ? 'bg-purple-100 text-purple-800' 
+                      : 'bg-teal-100 text-teal-800'
+                  }`}>
+                    {isFreePlan ? 'Free Plan' : 'Current'}
+                  </span>
                 )}
                 {plan.name === selectedPlan && (
                   <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium mb-1">Selected</span>
