@@ -150,7 +150,7 @@ export function PromptBuilder({ workflowId, goal, onGenerate }: PromptBuilderPro
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {questions.map((question) => (
+        {questions.map((question: any) => (
           <div key={question.key}>
             <label htmlFor={question.key} className="block text-sm font-medium text-gray-700 mb-2">
               {question.label} {question.required && <span className="text-red-500">*</span>}

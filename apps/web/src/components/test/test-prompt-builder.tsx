@@ -104,7 +104,7 @@ export function TestPromptBuilder({ workflowId, goal, onGenerate, sourceImageUrl
       {/* Questions */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium text-gray-900">Staging Preferences</h3>
-        {questions.map((question) => (
+        {questions.map((question: any) => (
           <div key={question.key}>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {question.label}
@@ -116,7 +116,7 @@ export function TestPromptBuilder({ workflowId, goal, onGenerate, sourceImageUrl
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               >
                 <option value="">Select an option</option>
-                {question.options?.map((option) => (
+                {question.options?.map((option: any) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>

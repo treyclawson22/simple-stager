@@ -98,7 +98,7 @@ export function EnhancedPromptBuilder({
     onPromptGenerated(generatedPrompt)
   }
 
-  const selectedStyle = ROOM_STYLES.find(style => style.value === roomStyle)
+  const selectedStyle = ROOM_STYLES.find((style: any) => style.value === roomStyle)
 
   // Show configuration form initially, then replace with prompt text area after generation
   if (showEditPrompt && generatedPrompt) {
@@ -206,7 +206,7 @@ export function EnhancedPromptBuilder({
             onChange={(e) => setRoomType(e.target.value as RoomType)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
           >
-            {ROOM_TYPES.map((type) => (
+            {ROOM_TYPES.map((type: any) => (
               <option key={type.value} value={type.value}>
                 {type.label}
               </option>
@@ -224,7 +224,7 @@ export function EnhancedPromptBuilder({
             onChange={(e) => setRoomStyle(e.target.value as RoomStyle)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
           >
-            {ROOM_STYLES.map((style) => (
+            {ROOM_STYLES.map((style: any) => (
               <option key={style.value} value={style.value}>
                 {style.label}
               </option>

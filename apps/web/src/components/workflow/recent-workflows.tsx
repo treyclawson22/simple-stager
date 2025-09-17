@@ -45,7 +45,7 @@ export async function RecentWorkflows({ userId }: RecentWorkflowsProps) {
       </div>
       
       <div className="space-y-4">
-        {workflows.map((workflow) => (
+        {workflows.map((workflow: any) => (
           <div key={workflow.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
             <div className="flex items-center justify-between">
               <Link

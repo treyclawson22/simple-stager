@@ -62,7 +62,7 @@ export function WorkflowCreator({ userId }: WorkflowCreatorProps) {
         <div>
           <label className="text-sm font-medium text-gray-700">Enhancement Goal</label>
           <div className="mt-2 grid grid-cols-3 gap-3">
-            {(['stage', 'declutter', 'improve'] as WorkflowGoal[]).map((option) => (
+            {(['stage', 'declutter', 'improve'] as WorkflowGoal[]).map((option: any) => (
               <label key={option} className="relative">
                 <input
                   type="radio"

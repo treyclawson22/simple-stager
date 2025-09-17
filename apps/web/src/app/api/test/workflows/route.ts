@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({ 
-      workflows: workflows.map(workflow => ({
+      workflows: workflows.map((workflow: any) => ({
         id: workflow.id,
         goal: workflow.goal,
         sourceImage: workflow.sourceImage,

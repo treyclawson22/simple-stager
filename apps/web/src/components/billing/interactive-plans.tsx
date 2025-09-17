@@ -145,8 +145,8 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
     }
   }
 
-  const selectedPlanObj = plans.find(p => p.name === selectedPlan)
-  const currentPlanObj = plans.find(p => p.name === currentPlanName)
+  const selectedPlanObj = plans.find((p: any) => p.name === selectedPlan)
+  const currentPlanObj = plans.find((p: any) => p.name === currentPlanName)
   const isUpgrade = selectedPlanObj && currentPlanObj && selectedPlanObj.price > currentPlanObj.price
   const isDowngrade = selectedPlanObj && currentPlanObj && selectedPlanObj.price < currentPlanObj.price
 
@@ -169,7 +169,7 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
       
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {plans.map((plan) => (
+        {plans.map((plan: any) => (
           <div
             key={plan.name}
             className={`${getCardClasses(plan)} p-4 cursor-pointer transition-all`}

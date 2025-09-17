@@ -130,12 +130,12 @@ export function WorkflowResults({ workflow, user }: WorkflowResultsProps) {
     )
   }
 
-  const isCompleted = results.some(result => result.downloaded)
+  const isCompleted = results.some((result: any) => result.downloaded)
 
   return (
     <div className="space-y-4">
       {/* Simplified results - just the image */}
-      {results.map((result) => (
+      {results.map((result: any) => (
         <div key={result.id}>
           <div 
             className="border rounded-lg overflow-hidden cursor-pointer relative h-64"
