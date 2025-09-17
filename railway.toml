@@ -7,15 +7,6 @@ healthcheckTimeout = 100
 restartPolicyType = "on_failure"
 
 [[services]]
-name = "web"
-
-[services.web.build]
-buildCommand = "npm install && npm run build --workspace=apps/web"
-
-[services.web.deploy]
-startCommand = "npm start --workspace=apps/web"
-
-[[services]]
 name = "worker"  
 source = "packages/queue"
 
