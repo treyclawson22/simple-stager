@@ -74,7 +74,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               email: user.email,
               name: user.name,
             }
-          }, { maxRetries: 3, delay: 1000 })
+          }, { maxRetries: 5, delay: 2000, wakeUpDatabase: true })
         } catch (error) {
           console.error('Auth error:', error)
           throw error
@@ -147,7 +147,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               // Use existing user ID
               user.id = existingUser.id
             }
-          }, { maxRetries: 3, delay: 1000 })
+          }, { maxRetries: 5, delay: 2000, wakeUpDatabase: true })
         } catch (error) {
           console.error('Error creating/finding user:', error)
           return false

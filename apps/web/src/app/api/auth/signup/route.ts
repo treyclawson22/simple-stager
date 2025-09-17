@@ -71,7 +71,12 @@ export async function POST(request: NextRequest) {
         email: newUser.email,
         name: newUser.name,
       }
-    }, { maxRetries: 5, delay: 2000 }) // Increased retries and delay for Supabase
+    }, { 
+      maxRetries: 8, 
+      delay: 3000, 
+      backoff: 1.5,
+      wakeUpDatabase: true 
+    }) // Enhanced settings for Supabase free tier
 
     return NextResponse.json({
       success: true,

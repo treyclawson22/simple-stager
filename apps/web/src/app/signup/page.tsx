@@ -103,6 +103,14 @@ function SignupForm() {
     }
     
     try {
+      // Pre-warm database to improve signup success rate
+      console.log('Warming up database...')
+      try {
+        await fetch('/api/db-warmup', { method: 'POST' })
+        console.log('Database warm-up completed')
+      } catch (warmupError) {
+        console.log('Database warm-up failed, proceeding anyway')
+      }
       // Create account directly via API instead of using NextAuth signIn
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
