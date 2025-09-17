@@ -14,7 +14,6 @@
     "@auth/prisma-adapter": "^1.0.0",
     "@hookform/resolvers": "^3.3.0",
     "@simple-stager/database": "*",
-    "@simple-stager/queue": "*",
     "@simple-stager/shared": "*",
     "@stripe/stripe-js": "^2.1.0",
     "bcryptjs": "^3.0.2",
