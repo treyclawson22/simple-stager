@@ -8,6 +8,7 @@ import bcrypt from 'bcryptjs'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   // adapter: PrismaAdapter(prisma), // Remove adapter for credentials provider compatibility
+  trustHost: true, // Trust the host in production (required for Railway deployment)
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
