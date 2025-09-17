@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Start a transaction to deduct credits and record the download
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // Deduct credits from user
       const updatedUser = await tx.user.update({
         where: { id: testUser.id },
