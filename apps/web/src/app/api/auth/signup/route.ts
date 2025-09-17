@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@simple-stager/database'
 import { generateReferralCode } from '@simple-stager/shared'
-import { withDatabaseRetry } from '@/lib/db-retry'
+import { executeWithRobustConnection } from '@/lib/robust-db'
 import bcrypt from 'bcryptjs'
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
+  console.log('🚀 Starting signup process...')
+
   try {
     const { email, password, name } = await request.json()
 
@@ -22,8 +24,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Wrap database operations in retry logic to handle Supabase wake-up delays
-    const user = await withDatabaseRetry(async () => {
+    console.log(`📧 Creating account for: ${email}`)
+
+    // Use robust database connection with aggressive retry strategy
+    const user = await executeWithRobustConnection(async (prisma) => {
+      console.log('🔍 Checking if user exists...')
+      
       // Check if user already exists
       const existingUser = await prisma.user.findUnique({
         where: { email }
@@ -33,10 +39,12 @@ export async function POST(request: NextRequest) {
         throw new Error('User already exists with this email')
       }
 
+      console.log('🔐 Hashing password...')
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 12)
       const referralCode = generateReferralCode()
 
+      console.log('👤 Creating user record...')
       // Create user
       const newUser = await prisma.user.create({
         data: {
@@ -48,6 +56,7 @@ export async function POST(request: NextRequest) {
         }
       })
 
+      console.log('🔑 Storing password hash...')
       // Store password hash
       await prisma.password.create({
         data: {
@@ -56,6 +65,7 @@ export async function POST(request: NextRequest) {
         }
       })
 
+      console.log('💰 Adding trial credits...')
       // Add initial trial credits to ledger
       await prisma.creditLedger.create({
         data: {
@@ -66,17 +76,16 @@ export async function POST(request: NextRequest) {
         },
       })
 
+      console.log(`✅ User created successfully: ${newUser.id}`)
       return {
         id: newUser.id,
         email: newUser.email,
         name: newUser.name,
       }
-    }, { 
-      maxRetries: 8, 
-      delay: 3000, 
-      backoff: 1.5,
-      wakeUpDatabase: true 
-    }) // Enhanced settings for Supabase free tier
+    }, 15) // Maximum 15 attempts with robust connection strategy
+
+    const duration = Date.now() - startTime
+    console.log(`🎉 Signup completed successfully in ${duration}ms`)
 
     return NextResponse.json({
       success: true,
@@ -85,7 +94,8 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Signup API error:', error)
+    const duration = Date.now() - startTime
+    console.error(`❌ Signup failed after ${duration}ms:`, (error as Error).message)
     
     // Check if it's a user validation error vs database error
     if ((error as Error).message === 'User already exists with this email') {
@@ -96,7 +106,7 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json(
-      { error: 'Failed to create account. Please try again.' },
+      { error: 'Failed to create account. Our servers are experiencing high load. Please try again in a moment.' },
       { status: 500 }
     )
   }
