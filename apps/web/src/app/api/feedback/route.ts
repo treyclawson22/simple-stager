@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { writeFile } from 'fs/promises'
 import { join } from 'path'
 import { existsSync, mkdirSync } from 'fs'
+import { prisma } from '@simple-stager/database'
 
 export async function POST(request: NextRequest) {
   try {
@@ -112,6 +113,23 @@ Staged Result: ${process.env.PUBLIC_URL || 'http://localhost:3000'}${stagedImage
 
     const logFile = join(feedbackDir, `feedback-${Date.now()}.json`)
     await writeFile(logFile, JSON.stringify(logEntry, null, 2))
+
+    // Update workflow status to support_ticket when feedback is submitted
+    if (workflowId) {
+      try {
+        await prisma.workflow.update({
+          where: { id: workflowId },
+          data: { 
+            status: 'support_ticket',
+            updatedAt: new Date()
+          }
+        })
+        console.log(`✅ Workflow ${workflowId} status updated to support_ticket`)
+      } catch (dbError) {
+        console.error('Failed to update workflow status:', dbError)
+        // Don't fail the whole request if workflow update fails
+      }
+    }
 
     return NextResponse.json({ 
       success: true, 

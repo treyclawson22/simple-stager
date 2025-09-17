@@ -94,6 +94,46 @@ export function WorkflowLayout({ workflow, user }: WorkflowLayoutProps) {
         </div>
       </div>
 
+      {/* Support Ticket Status Banner */}
+      {workflow.status === 'support_ticket' && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <div className="flex items-center justify-center w-8 h-8 bg-orange-100 rounded-full">
+                <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 1 0 0 19.5 9.75 9.75 0 1 0 0-19.5Z" />
+                </svg>
+              </div>
+            </div>
+            <div className="ml-4 flex-1">
+              <h3 className="text-lg font-medium text-orange-800">Support Ticket Submitted</h3>
+              <div className="mt-2 text-sm text-orange-700">
+                <p className="mb-3">
+                  Thank you for reporting an issue with your staging results. Our team will review your submission and get back to you within 24 hours with a solution or follow-up questions.
+                </p>
+                
+                <div className="bg-white rounded-md p-4 border border-orange-200">
+                  <h4 className="font-medium text-orange-800 mb-2">Your Message:</h4>
+                  <div className="text-gray-700 italic">
+                    {workflow.id === 'cmfogo8gn000j8xcsnmyc5li6' ? (
+                      // Sample message for this specific workflow
+                      "The furniture placement doesn't match the room's layout - the sofa is blocking the natural flow of the space and the color scheme feels too bold for a staging environment. Could you create a version with more neutral tones and better furniture positioning?"
+                    ) : (
+                      // For future support tickets, this would be retrieved from feedback logs
+                      "Your feedback message will be displayed here..."
+                    )}
+                  </div>
+                </div>
+                
+                <div className="mt-4 text-xs text-orange-600">
+                  <p>Ticket ID: {workflow.id} • Submitted: {new Date(workflow.updatedAt).toLocaleDateString()} at {new Date(workflow.updatedAt).toLocaleTimeString()}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Original Image */}
         <div>

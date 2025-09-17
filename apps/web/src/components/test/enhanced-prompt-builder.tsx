@@ -84,7 +84,8 @@ export function EnhancedPromptBuilder({
 
       const result = await response.json()
       setGeneratedPrompt(result.prompt)
-      setShowEditPrompt(true)
+      // Auto-chain: immediately use the generated prompt without showing it
+      onPromptGenerated(result.prompt)
       
     } catch (error) {
       console.error('Prompt generation error:', error)
@@ -100,68 +101,8 @@ export function EnhancedPromptBuilder({
 
   const selectedStyle = ROOM_STYLES.find((style: any) => style.value === roomStyle)
 
-  // Show configuration form initially, then replace with prompt text area after generation
-  if (showEditPrompt && generatedPrompt) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Staging Prompt</h3>
-          <p className="text-sm text-gray-600 mb-6">
-            Review and edit the generated staging prompt below, then proceed with staging
-          </p>
-        </div>
-
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-blue-900 mb-2">Generated Staging Prompt</label>
-            <textarea
-              value={generatedPrompt}
-              onChange={(e) => setGeneratedPrompt(e.target.value)}
-              rows={8}
-              className="w-full px-3 py-2 border border-blue-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
-            />
-            <p className="mt-1 text-xs text-blue-600">
-              Review and edit the prompt above if needed, then use it for staging.
-            </p>
-          </div>
-          
-          <div className="flex space-x-3">
-            <button
-              onClick={handleUsePrompt}
-              disabled={isGeneratingImage}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-            >
-              {isGeneratingImage ? (
-                <div className="flex items-center">
-                  <LoadingSpinnerWithText 
-                    text="Generating..." 
-                    size="sm"
-                    className="py-0"
-                  />
-                </div>
-              ) : (
-                'Generate Staged Room'
-              )}
-            </button>
-            <button
-              onClick={handleGeneratePrompt}
-              disabled={isGenerating || isGeneratingImage}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium min-w-[140px]"
-            >
-              {isGenerating ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="animate-spin rounded-full border-2 border-gray-300 border-t-gray-700 w-3 h-3 flex-shrink-0"></div>
-                  <span className="whitespace-nowrap">Generating...</span>
-                </div>
-              ) : (
-                'Regenerate Prompt'
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  // Skip prompt display section - auto-chain goes directly to image generation
+  // This section is removed for streamlined experience
 
   // Show loading state while generating prompt
   if (isGenerating) {
@@ -259,7 +200,7 @@ export function EnhancedPromptBuilder({
         disabled={isGenerating}
         className="w-full px-4 py-2 bg-indigo-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Generate Staging Prompt
+        Generate Staging
       </button>
     </div>
   )

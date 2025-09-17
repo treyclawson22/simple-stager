@@ -27,8 +27,11 @@ export function PromptBuilder({ workflowId, goal, onGenerate }: PromptBuilderPro
     setIsGenerating(true)
     setError('')
 
+    // Immediately hide the prompt section and show loading in results area
+    onGenerate()
+
     try {
-      // First generate the prompt using ChatGPT
+      // First generate the prompt using ChatGPT (background)
       const promptResponse = await fetch('/api/workflows/generate-prompt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -44,9 +47,9 @@ export function PromptBuilder({ workflowId, goal, onGenerate }: PromptBuilderPro
       }
 
       const { prompt } = await promptResponse.json()
-      setGeneratedPrompt(prompt)
+      // Skip displaying the prompt - go straight to image generation
 
-      // Then generate the image
+      // Then generate the image automatically
       const generateResponse = await fetch('/api/workflows/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -60,12 +63,13 @@ export function PromptBuilder({ workflowId, goal, onGenerate }: PromptBuilderPro
         throw new Error('Failed to start generation')
       }
 
-      onGenerate()
+      // Generation started successfully - results will show via polling
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
-    } finally {
       setIsGenerating(false)
+    } finally {
+      // Don't set isGenerating to false here - let the results component handle it
     }
   }
 
@@ -206,7 +210,7 @@ export function PromptBuilder({ workflowId, goal, onGenerate }: PromptBuilderPro
             }`}
           >
             <Wand2 className="-ml-1 mr-2 h-5 w-5" />
-            {isGenerating ? 'Generating...' : `Generate ${goal.charAt(0).toUpperCase() + goal.slice(1)}`}
+            {isGenerating ? 'Generating...' : goal === 'stage' ? 'Generate Staging' : `Generate ${goal.charAt(0).toUpperCase() + goal.slice(1)}`}
           </button>
         </div>
       </form>

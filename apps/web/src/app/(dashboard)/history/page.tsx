@@ -195,10 +195,16 @@ export default async function HistoryPage({
                   <tr key={workflow.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        {workflow.thumbnailUrl ? (
+                        {workflow.results.length > 0 && workflow.results[0].watermarkedUrl ? (
+                          <img
+                            src={workflow.results[0].watermarkedUrl}
+                            alt="Staged room"
+                            className="h-16 w-16 rounded object-cover"
+                          />
+                        ) : workflow.thumbnailUrl ? (
                           <img
                             src={workflow.thumbnailUrl}
-                            alt=""
+                            alt="Original room"
                             className="h-16 w-16 rounded object-cover"
                           />
                         ) : (
@@ -227,11 +233,13 @@ export default async function HistoryPage({
                           ? 'bg-yellow-100 text-yellow-800'
                           : workflow.status === 'failed'
                           ? 'bg-red-100 text-red-800'
+                          : workflow.status === 'support_ticket'
+                          ? 'bg-orange-100 text-orange-800'
                           : 'bg-gray-100 text-gray-800'
                       }`}>
-                        {workflow.status === 'ready' ? 'Not Complete' : workflow.status}
+                        {workflow.status === 'ready' ? 'Not Complete' : workflow.status === 'support_ticket' ? 'Support Ticket' : workflow.status}
                       </span>
-                      {workflow.status !== 'completed' && (
+                      {workflow.status !== 'completed' && workflow.status !== 'support_ticket' && (
                         <div className="text-xs text-gray-500 mt-1">
                           {workflow.editsUsed} edits used
                         </div>
@@ -256,7 +264,7 @@ export default async function HistoryPage({
                     </td>
                     
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      {workflow.status === 'completed' ? (
+                      {workflow.status === 'completed' || workflow.status === 'support_ticket' ? (
                         <WorkflowRenameButton 
                           workflowId={workflow.id}
                           currentName={workflow.name || getWorkflowGoalDisplay(workflow.goal)}

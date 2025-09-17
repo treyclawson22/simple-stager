@@ -268,6 +268,13 @@ export function AuthenticatedResultsWithReenhancement({
         >
           Start New Project
         </button>
+
+        <button
+          onClick={() => setShowFeedbackModal(true)}
+          className="px-6 py-3 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-md transition-colors"
+        >
+          🐛 Report Issue
+        </button>
       </div>
 
       {/* Edit Counter */}
@@ -315,6 +322,61 @@ export function AuthenticatedResultsWithReenhancement({
             >
               {isReenhancing ? 'Refining...' : 'Apply Refinement'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Feedback Modal */}
+      {showFeedbackModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Report Issue with Staging Results</h3>
+              <button
+                onClick={() => {
+                  setShowFeedbackModal(false)
+                  setFeedbackText('')
+                }}
+                disabled={isSubmittingFeedback}
+                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">
+                Describe the issue with your staging results. We'll review it along with your images and prompt to help improve the outcome.
+              </p>
+            </div>
+            
+            <textarea
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              placeholder="For example: 'The furniture is too modern for this space' or 'The room looks too cluttered' or 'The colors don't match the style I requested'..."
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+            
+            <div className="flex space-x-3 mt-4">
+              <button
+                onClick={handleFeedbackSubmit}
+                disabled={!feedbackText.trim() || isSubmittingFeedback}
+                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+              >
+                {isSubmittingFeedback ? 'Submitting...' : 'Submit Issue Report'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowFeedbackModal(false)
+                  setFeedbackText('')
+                }}
+                disabled={isSubmittingFeedback}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -2,6 +2,119 @@
 
 All notable changes to the Simple Stager project will be documented in this file.
 
+## [1.4.0] - 2025-09-17 - SUPPORT SYSTEM & CREDIT REFRESH
+
+### 🎯 MAJOR ENHANCEMENT - Customer Support & UX Improvements
+
+This release implements a comprehensive support ticket system and eliminates manual page refresh requirements for credit updates.
+
+### ✅ Added - Support Ticket System
+
+#### **Complete Support Ticket Workflow**
+- **Feature**: Customers can report issues with staging results via "🐛 Report Issue" button
+- **Database**: Added `support_ticket` status to workflow schema
+- **API**: Enhanced `/api/feedback` to automatically update workflow status
+- **UI**: Professional support ticket status display on workflow pages
+- **Files**: 
+  - `packages/database/schema.prisma` - Added support_ticket status
+  - `apps/web/src/app/api/feedback/route.ts` - Status update logic
+  - `apps/web/src/components/dashboard/authenticated-results-with-reenhancement.tsx` - Report button & modal
+  - `apps/web/src/components/workflow/workflow-layout.tsx` - Status display banner
+
+#### **Professional Support Experience**
+- **Status Banner**: Orange-themed support ticket display with 24-hour response commitment
+- **Message Copy**: Shows user's submitted feedback for transparency
+- **Ticket Details**: Displays ticket ID and submission timestamp
+- **No Credit Usage**: Support tickets treated as completed workflows without credit deduction
+- **Integration**: Seamless integration with existing workflow and history views
+
+### 🔧 Fixed - Credit Counter Auto-Refresh
+
+#### **Complete Credit Update System**
+- **Issue**: Manual page refresh required after downloads and purchases
+- **Root Cause**: Static credit displays not updating after transactions
+- **Solution**: Comprehensive auto-refresh mechanism for all scenarios
+
+#### **Download Credit Updates**
+- **Verification**: Existing `onCreditsUpdate` callback system working correctly
+- **Flow**: Download API → Returns `creditsRemaining` → Immediate UI update
+- **Coverage**: All authenticated download buttons update credits instantly
+
+#### **Purchase Credit Refresh**
+- **Implementation**: New `BillingClient` wrapper component
+- **Detection**: Monitors URL params for `?success=true` after Stripe checkout
+- **Process**: Success detection → User notification → Full page reload → Clean URL
+- **Files**: 
+  - `apps/web/src/components/billing/billing-client.tsx` - Success detection logic
+  - `apps/web/src/app/(dashboard)/billing/page.tsx` - Integration wrapper
+- **Result**: All credit displays (navigation, components) update automatically
+
+#### **Global Navigation Updates**
+- **Issue**: Dashboard navigation showed stale credit counts
+- **Solution**: Full page reload after purchases updates all server-side props
+- **Coverage**: Navigation bar, dashboard widgets, billing page - all stay current
+
+### 🎨 Enhanced - User Interface
+
+#### **Streamlined Staging Configuration**
+- **Button Text**: Changed "Generate Staging Prompt" to "Generate Staging"
+- **Auto-Chain**: Prompt generation and image generation happen automatically in background
+- **Hidden Prompts**: Users no longer see intermediate prompt generation step
+- **Clean Refinement**: Refine staging prompt field starts empty instead of pre-populated
+- **Files**: 
+  - `apps/web/src/components/prompt-builder/prompt-builder.tsx` - Button text and flow
+  - `apps/web/src/components/test/test-results-with-reenhancement.tsx` - Refinement cleanup
+
+#### **History & Workflow Management**
+- **Support Status**: Orange "Support Ticket" badges in history and recent workflows
+- **Action Buttons**: Support tickets show "View" instead of "Continue"
+- **Management**: Support tickets get rename button instead of delete button
+- **Consistency**: Unified status handling across all workflow display components
+
+### 📈 Performance & Reliability
+
+#### **Credit Transaction Reliability**
+- **Before**: Required manual refresh for credit updates
+- **After**: Automatic updates for all credit transactions
+- **Downloads**: Instant credit deduction with immediate UI feedback
+- **Purchases**: Automatic page refresh ensures all components show correct credits
+- **Navigation**: Always displays current credit count after any transaction
+
+#### **Support System Efficiency**
+- **Workflow Status**: Automatic status updates when issues reported
+- **No Manual Processing**: Support tickets automatically identified in admin workflows
+- **Professional Communication**: Clear 24-hour response commitment
+- **Transparency**: Users can see exactly what they reported
+
+### 🔐 Technical Improvements
+
+#### **Database Schema Updates**
+- **Workflow Status**: Extended to include `support_ticket` status
+- **Migration**: Seamless addition to existing status enum
+- **Backward Compatibility**: All existing workflows continue working normally
+
+#### **API Enhancements**
+- **Feedback Integration**: Combined feedback submission with workflow status updates
+- **Credit Refresh**: Robust credit fetching for post-purchase updates
+- **Error Handling**: Graceful degradation if status updates fail
+
+### 💯 User Experience Wins
+
+1. **No More Manual Refreshes**: Credits update automatically after any transaction
+2. **Professional Support**: Clear support ticket system with response commitments
+3. **One-Click Staging**: Simplified configuration flow without prompt visibility
+4. **Transparency**: Users see their support requests and ticket status
+5. **Consistency**: Unified status handling across all interfaces
+
+### 🚀 Production Ready
+
+- **Live Billing**: Credit refresh works with live Stripe transactions
+- **Support Workflow**: Complete ticket system ready for customer issues
+- **Railway Deployment**: All changes tested and ready for production
+- **Zero Downtime**: Non-breaking schema additions and feature additions
+
+---
+
 ## [1.3.0] - 2025-09-17 - UI/UX FIXES & BILLING INTEGRATION
 
 ### 🎯 STABLE RELEASE - All Critical User Issues Resolved

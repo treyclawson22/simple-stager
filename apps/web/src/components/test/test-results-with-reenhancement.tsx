@@ -28,6 +28,7 @@ export function TestResultsWithReenhancement({
   isAuthenticated = false
 }: TestResultsWithReenhancementProps) {
   const [showReenhancementForm, setShowReenhancementForm] = useState(false)
+  const [localProjectName, setLocalProjectName] = useState(projectName)
   const [reenhancementPrompt, setReenhancementPrompt] = useState('')
   const [isReenhancing, setIsReenhancing] = useState(false)
   const [reenhancedImageUrl, setReenhancedImageUrl] = useState<string>('')
@@ -132,12 +133,17 @@ export function TestResultsWithReenhancement({
       return
     }
 
+    if (!localProjectName.trim()) {
+      alert('Please enter a project name before downloading.')
+      return
+    }
+
     if (hasDownloaded) {
       // Already downloaded, just download the file
       const link = document.createElement('a')
       link.href = latestFullResUrl
-      const fileName = projectName.trim() 
-        ? `${projectName.trim()} - Virtually Staged.jpg`
+      const fileName = localProjectName.trim() 
+        ? `${localProjectName.trim()} - Virtually Staged.jpg`
         : `Virtually Staged - ${workflowId}.jpg`
       link.download = fileName
       document.body.appendChild(link)
@@ -174,8 +180,8 @@ export function TestResultsWithReenhancement({
         // Download the file
         const link = document.createElement('a')
         link.href = latestFullResUrl
-        const fileName = projectName.trim() 
-          ? `${projectName.trim()} - Virtually Staged.jpg`
+        const fileName = localProjectName.trim() 
+          ? `${localProjectName.trim()} - Virtually Staged.jpg`
           : `Virtually Staged - ${workflowId}.jpg`
         link.download = fileName
         document.body.appendChild(link)
@@ -215,8 +221,8 @@ export function TestResultsWithReenhancement({
         // Trigger the actual download
         const link = document.createElement('a')
         link.href = latestFullResUrl
-        const fileName = projectName.trim() 
-          ? `${projectName.trim()} - Virtually Staged.jpg`
+        const fileName = localProjectName.trim() 
+          ? `${localProjectName.trim()} - Virtually Staged.jpg`
           : `Virtually Staged - ${workflowId}.jpg`
         link.download = fileName
         document.body.appendChild(link)
@@ -374,10 +380,7 @@ export function TestResultsWithReenhancement({
             <button
               onClick={() => {
                 setShowReenhancementForm(true)
-                // Auto-populate with original prompt when opening refinement form
-                if (originalPrompt && !reenhancementPrompt) {
-                  setReenhancementPrompt(originalPrompt)
-                }
+                // Keep refinement prompt field empty instead of auto-populating
               }}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium"
             >
@@ -456,6 +459,22 @@ export function TestResultsWithReenhancement({
       </div>
       )}
       
+      {/* Project Name Field */}
+      <div className="mb-4">
+        <label htmlFor="projectName" className="block text-sm font-medium text-gray-700 mb-2">
+          Project Name <span className="text-red-500">*</span>
+        </label>
+        <input
+          id="projectName"
+          type="text"
+          value={localProjectName}
+          onChange={(e) => setLocalProjectName(e.target.value)}
+          placeholder="123 Main Street, Los Angeles, CA"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+        />
+        <p className="mt-1 text-xs text-gray-500">Required for download</p>
+      </div>
+
       {/* Action buttons */}
       <div className="space-y-4">
         <div className="flex space-x-4">

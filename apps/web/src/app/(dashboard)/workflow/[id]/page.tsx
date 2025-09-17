@@ -38,13 +38,6 @@ export default async function WorkflowPage({ params }: WorkflowPageProps) {
   return (
     <div className="space-y-6">
       <WorkflowLayout workflow={workflow} user={user} />
-      
-      {workflow.jobs.length > 0 && workflow.jobs[0].prompt && (
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <h4 className="text-sm font-medium text-gray-900 mb-2">Generation Prompt</h4>
-          <p className="text-sm text-gray-700">{workflow.jobs[0].prompt}</p>
-        </div>
-      )}
     </div>
   )
 }

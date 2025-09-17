@@ -74,7 +74,7 @@ model Workflow {
   previewUrl   String?  // Watermarked preview
   thumbnailUrl String?
   editsUsed    Int      @default(0)
-  status       String   @default("ready") // ready|processing|completed|failed
+  status       String   @default("ready") // ready|processing|completed|failed|support_ticket
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   

@@ -5,9 +5,15 @@ import Link from 'next/link'
 import { InteractivePlans } from '@/components/billing/interactive-plans'
 import { ReferralBanner } from '@/components/billing/referral-banner'
 import { CreditPackPurchase } from '@/components/billing/credit-pack-purchase'
+import { BillingClient } from '@/components/billing/billing-client'
 import { getWorkflowGoalDisplay } from '@simple-stager/shared'
 
-export default async function BillingPage() {
+interface BillingPageProps {
+  searchParams: Promise<{ success?: string; canceled?: string }>
+}
+
+export default async function BillingPage({ searchParams }: BillingPageProps) {
+  const resolvedSearchParams = await searchParams
   const user = await getCurrentUser()
 
   if (!user) {
@@ -53,7 +59,8 @@ export default async function BillingPage() {
   const totalUsageThisMonth = monthlyUsage.reduce((sum: number, entry: any) => sum + Math.abs(entry.delta), 0)
 
   return (
-    <div className="space-y-6">
+    <BillingClient initialCredits={user.credits}>
+      <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold" style={{ color: '#464646' }}>Billing & Credits</h1>
         <p className="mt-2 text-sm" style={{ color: '#6B7280' }}>
@@ -195,6 +202,7 @@ export default async function BillingPage() {
 
         </div>
       </div>
-    </div>
+      </div>
+    </BillingClient>
   )
 }
