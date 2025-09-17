@@ -1,0 +1,28 @@
+{
+  "name": "simple-stager",
+  "version": "1.0.0",
+  "description": "AI-powered real estate staging SaaS application",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "clean": "turbo clean",
+    "type-check": "turbo type-check",
+    "db:migrate": "turbo db:migrate",
+    "db:generate": "turbo db:generate"
+  },
+  "devDependencies": {
+    "turbo": "^1.10.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "packageManager": "npm@9.0.0",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

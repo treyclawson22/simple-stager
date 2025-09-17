@@ -1,0 +1,28 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+healthcheckPath = "/api/health"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+
+[[services]]
+name = "web"
+source = "apps/web"
+
+[services.web.build]
+buildCommand = "npm run build"
+
+[services.web.deploy]
+startCommand = "npm start"
+
+[[services]]
+name = "worker"  
+source = "packages/queue"
+
+[services.worker.deploy]
+startCommand = "node worker.js"
+
+[environments]
+production.PORT = 3000
+production.NODE_ENV = "production"

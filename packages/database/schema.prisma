@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  image         String?
+  authProvider  String   // google | apple | password
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  planId        String?
+  credits       Int      @default(3)
+  referralCode  String   @unique @default(cuid())
+  referredById  String?
+  referredBy    User?    @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals     User[]   @relation("UserReferrals")
+  
+  plan          Plan?         @relation(fields: [planId], references: [id])
+  integrations  Integration[]
+  workflows     Workflow[]
+  creditLedger  CreditLedger[]
+  password      Password?
+  
+  @@map("users")
+}
+
+model Plan {
+  id         String @id
+  name       String
+  priceCents Int
+  credits    Int
+  interval   String // monthly | yearly
+  users      User[]
+  
+  @@map("plans")
+}
+
+model CreditLedger {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  delta     Int      // + or -
+  reason    String   // purchase|download|admin_adjust|referral_reward|trial
+  meta      String?  // Additional metadata (JSON string for SQLite)
+  createdAt DateTime @default(now())
+  
+  @@map("credit_ledger")
+}
+
+model Workflow {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String?  // Display name for the workflow
+  goal         String   // stage|declutter|improve
+  roomType     String?
+  style        String?
+  colorNotes   String?
+  budgetVibe   String?
+  sourceImage  String   // S3 or local path
+  previewUrl   String?  // Watermarked preview
+  thumbnailUrl String?
+  editsUsed    Int      @default(0)
+  status       String   @default("ready") // ready|processing|completed|failed
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  jobs    Job[]
+  results Result[]
+  
+  @@map("workflows")
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  workflowId  String
+  workflow    Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  status      String    @default("queued") // queued|processing|completed|failed
+  provider    String    // nanobanana
+  prompt      String
+  resultUrl   String?
+  error       String?
+  createdAt   DateTime  @default(now())
+  finishedAt  DateTime?
+  
+  @@map("jobs")
+}
+
+model Result {
+  id             String   @id @default(cuid())
+  workflowId     String
+  workflow       Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  jobId          String
+  watermarkedUrl String   // Preview with watermark
+  fullresUrl     String?  // Full resolution without watermark
+  downloaded     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  
+  @@map("results")
+}
+
+model Integration {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider  String   // gdrive|dropbox|icloud
+  token     String   // Encrypted token
+  metadata  String?  // Additional provider-specific data (JSON string for SQLite)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, provider])
+  @@map("integrations")
+}
+
+model Password {
+  id           String @id @default(cuid())
+  userId       String @unique
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hash         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@map("user_passwords")
+}
