@@ -154,7 +154,7 @@ function SignupForm() {
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             Or{' '}
-            <Link href="/login" className="font-medium text-teal-600 hover:text-teal-500">
+            <Link href="/" className="font-medium text-teal-600 hover:text-teal-500">
               sign in to your existing account
             </Link>
           </p>
