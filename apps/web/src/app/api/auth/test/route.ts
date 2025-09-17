@@ -35,8 +35,8 @@ export async function POST(request: NextRequest) {
       
       console.log('Testing credentials:', { email, isSignUp })
       
-      // Import providers directly to test
-      const { providers } = await import('@/lib/auth')
+      // Test auth configuration (providers are internal to NextAuth)
+      // const { providers } = await import('@/lib/auth')
       
       return NextResponse.json({
         success: true,
