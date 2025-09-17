@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { User, Plan } from '@simple-stager/database'
+
 interface InteractivePlansProps {
-  user: any
+  user: (User & { plan: Plan | null }) | null
 }
 
 interface PlanOption {

@@ -1,14 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { Workflow, Result } from '@simple-stager/database'
+import { Workflow, Result, User, Plan } from '@simple-stager/database'
 import { WorkflowResults } from './workflow-results'
 import { getWorkflowGoalDisplay } from '@simple-stager/shared'
 import { WorkflowRenameButton } from './workflow-rename-button'
 
 interface WorkflowLayoutProps {
   workflow: Workflow & { results: Result[] }
-  user: any
+  user: User & { plan: Plan | null }
 }
 
 export function WorkflowLayout({ workflow, user }: WorkflowLayoutProps) {
