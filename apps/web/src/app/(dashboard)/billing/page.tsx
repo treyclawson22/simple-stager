@@ -49,7 +49,7 @@ export default async function BillingPage() {
     },
   })
 
-  const totalUsageThisMonth = monthlyUsage.reduce((sum, entry) => sum + Math.abs(entry.delta), 0)
+  const totalUsageThisMonth = monthlyUsage.reduce((sum: number, entry: any) => sum + Math.abs(entry.delta), 0)
 
   return (
     <div className="space-y-6">
@@ -118,10 +118,10 @@ export default async function BillingPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {creditHistory.map((entry, index) => {
+                    {creditHistory.map((entry: any, index: number) => {
                       const runningBalance = creditHistory
                         .slice(index)
-                        .reduce((sum, e) => sum + e.delta, user.credits)
+                        .reduce((sum: number, e: any) => sum + e.delta, user.credits)
                         
                       return (
                         <tr key={entry.id}>
