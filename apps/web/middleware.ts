@@ -17,6 +17,11 @@ export default auth((req) => {
     '/uploads',
   ]
   
+  // Always allow health endpoint (for Railway healthchecks)
+  if (pathname === '/api/health') {
+    return NextResponse.next()
+  }
+  
   // Check if the current path is public or starts with public API routes
   const isPublicRoute = publicRoutes.some(route => 
     pathname === route || pathname.startsWith(route + '/')
