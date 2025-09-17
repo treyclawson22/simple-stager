@@ -116,14 +116,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           await withDatabaseRetry(async () => {
             // Check if user already exists
             const existingUser = await prisma.user.findUnique({
-              where: { email: user.email }
+              where: { email: user.email! }
             })
 
             if (!existingUser) {
               // Create new user for Google OAuth
               const newUser = await prisma.user.create({
                 data: {
-                  email: user.email,
+                  email: user.email!,
                   name: user.name || null,
                   authProvider: 'google',
                   credits: 3,
