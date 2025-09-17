@@ -35,7 +35,7 @@ export default async function BillingPage() {
     select: { id: true, name: true, goal: true }
   })
 
-  const workflowMap = Object.fromEntries(workflows.map(w => [w.id, w]))
+  const workflowMap = Object.fromEntries(workflows.map((w: any) => [w.id, w]))
 
   // Calculate monthly usage
   const thirtyDaysAgo = new Date()
