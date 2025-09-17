@@ -7,7 +7,8 @@ import { generateReferralCode } from '@simple-stager/shared'
 import bcrypt from 'bcryptjs'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  // adapter: PrismaAdapter(prisma), // Remove adapter for credentials provider compatibility
+  // Note: PrismaAdapter commented out for CredentialsProvider compatibility
+  // adapter: PrismaAdapter(prisma),
   trustHost: true, // Trust the host in production (required for Railway deployment)
   providers: [
     GoogleProvider({

@@ -103,6 +103,12 @@ function SignupForm() {
     }
     
     try {
+      console.log('Attempting signup with data:', {
+        email: formData.email,
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        isSignUp: 'true'
+      })
+      
       const result = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
@@ -111,11 +117,18 @@ function SignupForm() {
         redirect: false,
       })
 
+      console.log('Signup result:', result)
+
       if (result?.error) {
+        console.error('Signup failed with error:', result.error)
         alert('Signup failed: ' + result.error)
       } else if (result?.ok) {
+        console.log('Signup successful, redirecting to dashboard')
         // Redirect to dashboard on successful signup
         window.location.href = '/dashboard'
+      } else {
+        console.log('Unexpected signup result:', result)
+        alert('Signup failed: Unexpected response')
       }
     } catch (error) {
       console.error('Signup error:', error)
@@ -129,7 +142,7 @@ function SignupForm() {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <img src="/logo.png" alt="SimpleStager" className="mx-auto h-28 w-auto" />
+          <img src="/logo.png" alt="SimpleStager" className="mx-auto h-21 w-auto" />
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
             Create your account
           </h2>

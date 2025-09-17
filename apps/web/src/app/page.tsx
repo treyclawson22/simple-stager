@@ -68,7 +68,7 @@ function SignInForm() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="mx-auto flex items-center justify-center">
-            <img src="/logo.png" alt="SimpleStager" className="h-28 w-auto" />
+            <img src="/logo.png" alt="SimpleStager" className="h-21 w-auto" />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold" style={{color: '#464646'}}>
             Sign in to your account
