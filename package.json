@@ -5,7 +5,8 @@
   "private": true,
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/database",
+    "packages/shared"
   ],
   "scripts": {
     "postinstall": "npx prisma generate --schema=packages/database/schema.prisma",
