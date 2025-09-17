@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@simple-stager/database'
+import { getRobustPrisma } from '@/lib/robust-db'
 
 export async function GET() {
   try {
     // Simple database health check that also wakes up Supabase
     const start = Date.now()
+    const prisma = getRobustPrisma()
     
     // Test basic connectivity
     await prisma.$queryRaw`SELECT 1`

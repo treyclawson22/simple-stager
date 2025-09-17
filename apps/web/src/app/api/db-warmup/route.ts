@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@simple-stager/database'
+import { getRobustPrisma } from '@/lib/robust-db'
 
 export async function POST() {
   try {
     console.log('Starting database warm-up sequence...')
+    const prisma = getRobustPrisma()
     
     // Multiple wake-up queries to ensure database is fully active
     await prisma.$queryRaw`SELECT 1`
