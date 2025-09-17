@@ -7,13 +7,11 @@ export default auth((req) => {
   // Public routes that don't require authentication
   const publicRoutes = [
     '/',
-    '/test',
-    '/test-dashboard',
+    '/signup',
     '/dashboard',
     '/history',
     '/billing',
     '/referrals',
-    '/auth/signin',
     '/api/test',
     '/api/workflows',
     '/uploads',
@@ -36,7 +34,7 @@ export default auth((req) => {
   
   // If user is not authenticated and trying to access protected route, redirect to sign in
   if (!req.auth) {
-    const signInUrl = new URL('/auth/signin', req.url)
+    const signInUrl = new URL('/', req.url)
     signInUrl.searchParams.set('callbackUrl', pathname)
     return NextResponse.redirect(signInUrl)
   }

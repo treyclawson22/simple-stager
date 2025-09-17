@@ -181,15 +181,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   pages: {
-    signIn: '/auth/signin',
-    signOut: '/auth/signin',
+    signIn: '/',
+    signOut: '/',
   },
   callbacks: {
     redirect: async ({ url, baseUrl }) => {
-      // Ensure all redirects go to localhost:3000
+      // Handle localhost development redirects
       if (url.startsWith('http://localhost:3001')) {
         return url.replace('http://localhost:3001', 'http://localhost:3000')
       }
+      
+      // Handle production domain redirects
+      if (url.startsWith('https://simple-stager-web-production.up.railway.app')) {
+        return url.replace('https://simple-stager-web-production.up.railway.app', 'https://app.simplestager.com')
+      }
+      
       // If it's a relative URL, prepend baseUrl
       if (url.startsWith('/')) {
         return `${baseUrl}${url}`

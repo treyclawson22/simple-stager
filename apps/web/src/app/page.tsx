@@ -1,239 +1,209 @@
-import Link from 'next/link'
-import { ArrowRight, Sparkles, Upload, Wand2, Download } from 'lucide-react'
+'use client'
 
-export default function HomePage() {
+import { useState, Suspense } from 'react'
+import { signIn } from 'next-auth/react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+
+function SignInForm() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+  
+  const [isLoading, setIsLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  })
+  const [error, setError] = useState('')
+
+  const handleOAuthSignIn = async (provider: 'google' | 'apple') => {
+    setIsLoading(true)
+    setError('')
+    
+    try {
+      await signIn(provider, { 
+        callbackUrl,
+        redirect: true 
+      })
+    } catch (error) {
+      setError('Authentication failed. Please try again.')
+      setIsLoading(false)
+    }
+  }
+
+  const handleCredentialsSignIn = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError('')
+
+    if (!formData.email || !formData.password) {
+      setError('Email and password are required')
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      const result = await signIn('credentials', {
+        email: formData.email,
+        password: formData.password,
+        isSignUp: 'false',
+        redirect: false,
+      })
+
+      if (result?.error) {
+        setError('Invalid email or password')
+      } else if (result?.ok) {
+        router.push(callbackUrl)
+      }
+    } catch (error) {
+      setError('Authentication failed. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Sparkles className="h-8 w-8 text-indigo-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">SimpleStager</span>
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{backgroundColor: '#F9FAFB'}}>
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <div className="mx-auto flex items-center justify-center">
+            <img src="/logo.png" alt="SimpleStager" className="h-28 w-auto" />
+          </div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold" style={{color: '#464646'}}>
+            Sign in to your account
+          </h2>
+          <p className="mt-2 text-center text-sm" style={{color: '#6E6E6E'}}>
+            Transform your real estate photos with AI
+          </p>
+        </div>
+
+        <div className="space-y-6">
+          {/* OAuth Providers */}
+          <div className="space-y-3">
+            <button
+              onClick={() => handleOAuthSignIn('google')}
+              disabled={isLoading}
+              className="w-full flex justify-center items-center px-4 py-3 border rounded-md shadow-sm text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2" style={{borderColor: '#E3F2FD', backgroundColor: '#FFFFFF', color: '#464646'}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E3F2FD'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFFFFF'}
+            >
+              <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              Continue with Google
+            </button>
+
+            <button
+              onClick={() => handleOAuthSignIn('apple')}
+              disabled={isLoading}
+              className="w-full flex justify-center items-center px-4 py-3 border rounded-md shadow-sm text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2" style={{borderColor: '#464646', backgroundColor: '#464646'}} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#6E6E6E'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#464646'}
+            >
+              <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/>
+              </svg>
+              Continue with Apple
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t" style={{borderColor: '#E3F2FD'}} />
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/signin"
-                className="text-gray-700 hover:text-gray-900 text-sm font-medium"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/signup"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700"
-              >
-                Get Started
-              </Link>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2" style={{backgroundColor: '#F9FAFB', color: '#6E6E6E'}}>or</span>
             </div>
           </div>
-        </div>
-      </nav>
 
-      {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-indigo-50 to-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+          {/* Email/Password Form */}
+          <form onSubmit={handleCredentialsSignIn} className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium" style={{color: '#464646'}}>
+                Email Address
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1"
+                style={{borderColor: '#E3F2FD', backgroundColor: '#FFFFFF', color: '#464646'}}
+                onFocus={(e) => {e.currentTarget.style.borderColor = '#089AB2'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(8, 154, 178, 0.2)'}}
+                onBlur={(e) => {e.currentTarget.style.borderColor = '#E3F2FD'; e.currentTarget.style.boxShadow = 'none'}}
+                placeholder="Enter your email"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium" style={{color: '#464646'}}>
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className="mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1"
+                style={{borderColor: '#E3F2FD', backgroundColor: '#FFFFFF', color: '#464646'}}
+                onFocus={(e) => {e.currentTarget.style.borderColor = '#089AB2'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(8, 154, 178, 0.2)'}}
+                onBlur={(e) => {e.currentTarget.style.borderColor = '#E3F2FD'; e.currentTarget.style.boxShadow = 'none'}}
+                placeholder="Enter your password"
+              />
+            </div>
+
+            {error && (
+              <div className="rounded-md p-4" style={{backgroundColor: '#FFE8E8'}}>
+                <div className="text-sm" style={{color: '#C53030'}}>{error}</div>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2"
+              style={{backgroundColor: '#089AB2'}}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4DB6AC'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#089AB2'}
+            >
+              {isLoading ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Signing in...
+                </div>
+              ) : (
+                'Sign In'
+              )}
+            </button>
+          </form>
+
+          {/* Sign Up Link */}
           <div className="text-center">
-            <h1 className="text-4xl sm:text-6xl font-bold text-gray-900 mb-6">
-              Transform Your Real Estate Photos with{' '}
-              <span className="text-indigo-600">AI</span>
-            </h1>
-            
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Stage empty rooms, declutter spaces, and improve lighting instantly. 
-              Professional-quality results in minutes, not hours.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/signup"
-                className="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-indigo-700 flex items-center justify-center"
-              >
-                Start Free Trial
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-              
-              <Link
-                href="#how-it-works"
-                className="border border-gray-300 text-gray-700 px-8 py-3 rounded-lg text-lg font-medium hover:bg-gray-50"
-              >
-                See How It Works
-              </Link>
-            </div>
-            
-            <div className="mt-8 text-sm text-gray-500">
-              ✨ 3 free credits • No credit card required • Professional results
-            </div>
+            <Link
+              href="/signup"
+              className="text-sm"
+              style={{color: '#089AB2'}}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#4DB6AC'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#089AB2'}
+            >
+              Don't have an account? Sign up
+            </Link>
           </div>
         </div>
       </div>
-
-      {/* How It Works */}
-      <section id="how-it-works" className="py-24 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">How It Works</h2>
-            <p className="text-xl text-gray-600">Three simple steps to transformed photos</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <Upload className="h-12 w-12 text-indigo-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">1. Upload Photo</h3>
-                <p className="text-gray-600">Upload your room photo and choose your enhancement goal</p>
-              </div>
-            </div>
-            
-            <div className="text-center">
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <Wand2 className="h-12 w-12 text-indigo-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">2. AI Magic</h3>
-                <p className="text-gray-600">Our AI analyzes and transforms your space professionally</p>
-              </div>
-            </div>
-            
-            <div className="text-center">
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <Download className="h-12 w-12 text-indigo-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">3. Download</h3>
-                <p className="text-gray-600">Get your professionally enhanced photo in minutes</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Three Enhancement Modes</h2>
-            <p className="text-xl text-gray-600">Choose the perfect transformation for your needs</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="border border-gray-200 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">🛋️ Stage</h3>
-              <p className="text-gray-600 mb-4">Add furniture and decor to empty rooms. Perfect for vacant properties.</p>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Add appropriate furniture</li>
-                <li>• Professional styling</li>
-                <li>• Buyer-friendly aesthetics</li>
-              </ul>
-            </div>
-            
-            <div className="border border-gray-200 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">🧹 Declutter</h3>
-              <p className="text-gray-600 mb-4">Remove personal items and clutter for clean, neutral spaces.</p>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Remove personal photos</li>
-                <li>• Clean surfaces</li>
-                <li>• Organize spaces</li>
-              </ul>
-            </div>
-            
-            <div className="border border-gray-200 rounded-lg p-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">✨ Improve</h3>
-              <p className="text-gray-600 mb-4">Light renovations like paint, lighting, and modern touches.</p>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Fresh paint colors</li>
-                <li>• Better lighting</li>
-                <li>• Modern updates</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section className="py-24 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Simple Pricing</h2>
-            <p className="text-xl text-gray-600">Pay only for what you use</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Starter</h3>
-              <div className="text-3xl font-bold text-gray-900 mb-4">$29<span className="text-lg text-gray-600">/mo</span></div>
-              <ul className="space-y-2 text-sm text-gray-600 mb-6">
-                <li>✓ 50 credits per month</li>
-                <li>✓ All enhancement modes</li>
-                <li>✓ HD downloads</li>
-                <li>✓ Email support</li>
-              </ul>
-              <Link href="/signup" className="w-full bg-gray-900 text-white py-2 px-4 rounded-md text-center font-medium hover:bg-gray-800 block">
-                Get Started
-              </Link>
-            </div>
-            
-            <div className="bg-white rounded-lg shadow-sm border-2 border-indigo-500 p-6 relative">
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <span className="bg-indigo-500 text-white px-3 py-1 rounded-full text-xs font-medium">Most Popular</span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Pro</h3>
-              <div className="text-3xl font-bold text-gray-900 mb-4">$79<span className="text-lg text-gray-600">/mo</span></div>
-              <ul className="space-y-2 text-sm text-gray-600 mb-6">
-                <li>✓ 200 credits per month</li>
-                <li>✓ All enhancement modes</li>
-                <li>✓ HD downloads</li>
-                <li>✓ Priority support</li>
-                <li>✓ Cloud storage integration</li>
-              </ul>
-              <Link href="/signup" className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md text-center font-medium hover:bg-indigo-700 block">
-                Get Started
-              </Link>
-            </div>
-            
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Enterprise</h3>
-              <div className="text-3xl font-bold text-gray-900 mb-4">$199<span className="text-lg text-gray-600">/mo</span></div>
-              <ul className="space-y-2 text-sm text-gray-600 mb-6">
-                <li>✓ 1000 credits per month</li>
-                <li>✓ All enhancement modes</li>
-                <li>✓ HD downloads</li>
-                <li>✓ Phone support</li>
-                <li>✓ Cloud storage integration</li>
-                <li>✓ Team collaboration</li>
-              </ul>
-              <Link href="/signup" className="w-full bg-gray-900 text-white py-2 px-4 rounded-md text-center font-medium hover:bg-gray-800 block">
-                Get Started
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-24 bg-indigo-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Ready to Transform Your Photos?</h2>
-          <p className="text-xl text-indigo-100 mb-8">Start with 3 free credits today</p>
-          <Link
-            href="/signup"
-            className="bg-white text-indigo-600 px-8 py-3 rounded-lg text-lg font-medium hover:bg-gray-50 inline-flex items-center"
-          >
-            Get Started Free
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Link>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-4">
-              <Sparkles className="h-6 w-6 text-indigo-400" />
-              <span className="ml-2 text-lg font-bold">SimpleStager</span>
-            </div>
-            <p className="text-gray-400">Transform your real estate photos with AI</p>
-          </div>
-        </div>
-      </footer>
     </div>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignInForm />
+    </Suspense>
   )
 }
