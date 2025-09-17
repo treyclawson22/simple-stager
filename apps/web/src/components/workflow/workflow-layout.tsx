@@ -8,7 +8,7 @@ import { WorkflowRenameButton } from './workflow-rename-button'
 
 interface WorkflowLayoutProps {
   workflow: Workflow & { results: Result[] }
-  user: User & { plan: Plan | null }
+  user: User & { plans: Plan[] }
 }
 
 export function WorkflowLayout({ workflow, user }: WorkflowLayoutProps) {
