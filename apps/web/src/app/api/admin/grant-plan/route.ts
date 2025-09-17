@@ -110,8 +110,7 @@ function isAdmin(user: any): boolean {
   
   // Option 1: Check by email
   const adminEmails = [
-    'trey@simplestager.com',
-    'admin@simplestager.com',
+    'support@simplestager.com',
     // Add your admin emails here
   ]
   

@@ -5,8 +5,7 @@ import { prisma } from '@simple-stager/database'
 // Helper function to check if user is admin
 function isAdmin(user: any): boolean {
   const adminEmails = [
-    'trey@simplestager.com',
-    'admin@simplestager.com',
+    'support@simplestager.com',
     // Add your admin emails here
   ]
   

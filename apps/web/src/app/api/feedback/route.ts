@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     // Prepare email content
     const emailContent = {
-      to: 'help@simplestager.com',
+      to: 'support@simplestager.com',
       subject: `Staging Feedback - ${projectName || 'Workflow ' + workflowId}`,
       html: `
         <h2>New Staging Feedback Received</h2>
