@@ -83,7 +83,7 @@ export default async function BillingPage() {
               
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="text-2xl font-bold text-gray-900">
-                  {monthlyUsage.filter(entry => entry.reason === 'download').length}
+                  {monthlyUsage.filter((entry: any) => entry.reason === 'download').length}
                 </div>
                 <div className="text-sm text-gray-600">Downloads</div>
               </div>
