@@ -12,7 +12,7 @@ export default function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    // Only match non-static paths
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    // Only match non-static paths and exclude API endpoints
+    '/((?!_next/static|_next/image|favicon.ico|api/).*)',
   ],
 }
