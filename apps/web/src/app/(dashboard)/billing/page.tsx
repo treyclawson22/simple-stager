@@ -21,8 +21,8 @@ export default async function BillingPage() {
   })
 
   // Get workflow IDs from download transactions and fetch workflow data
-  const downloadEntries = creditHistory.filter(entry => entry.reason === 'download' && entry.meta)
-  const workflowIds = downloadEntries.map(entry => {
+  const downloadEntries = creditHistory.filter((entry: any) => entry.reason === 'download' && entry.meta)
+  const workflowIds = downloadEntries.map((entry: any) => {
     try {
       return JSON.parse(entry.meta).workflowId
     } catch {
