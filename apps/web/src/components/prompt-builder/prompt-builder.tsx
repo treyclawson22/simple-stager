@@ -199,19 +199,14 @@ export function PromptBuilder({ workflowId, goal, onGenerate }: PromptBuilderPro
           <button
             type="submit"
             disabled={isGenerating}
-            className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+            className={`w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+              isGenerating 
+                ? 'text-gray-500 bg-gray-300 cursor-not-allowed' 
+                : 'text-white bg-indigo-600 hover:bg-indigo-700'
+            }`}
           >
-            {isGenerating ? (
-              <>
-                <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Wand2 className="-ml-1 mr-2 h-5 w-5" />
-                Generate {goal.charAt(0).toUpperCase() + goal.slice(1)}
-              </>
-            )}
+            <Wand2 className="-ml-1 mr-2 h-5 w-5" />
+            {isGenerating ? 'Generating...' : `Generate ${goal.charAt(0).toUpperCase() + goal.slice(1)}`}
           </button>
         </div>
       </form>

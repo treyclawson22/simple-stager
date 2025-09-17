@@ -88,9 +88,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     redirect: async ({ url, baseUrl }) => {
-      // Handle localhost development redirects
-      if (url.startsWith('http://localhost:3001')) {
-        return url.replace('http://localhost:3001', 'http://localhost:3000')
+      // Handle localhost development redirects (keep on same port)
+      if (url.startsWith('http://localhost:3000')) {
+        return url.replace('http://localhost:3000', 'http://localhost:3001')
       }
       
       // Handle production domain redirects

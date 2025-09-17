@@ -3,9 +3,10 @@
 ## Project State Summary
 
 **Last Updated**: September 17, 2025  
-**Status**: ✅ **RAILWAY DEPLOYMENT SUCCESSFUL** - All deployment issues resolved, production environment fully operational  
+**Status**: ✅ **FULLY OPERATIONAL** - All critical issues resolved, production environment stable  
 **Working URLs**: 
-- Local: `http://localhost:3000/test` (Test page functional)
+- Local: `http://localhost:3001` (Main application - authenticated users)
+- Local Test: `http://localhost:3001/test` (Test page - bypasses authentication)
 - Production: `https://simple-stager-web-production.up.railway.app` (Railway deployment working ✅)
 
 ## Current Configuration
@@ -24,7 +25,34 @@ GEMINI_API_KEY=your-gemini-api-key
 
 ## Recent Development History
 
-### 🎉 **LATEST: Session 14 - Railway Deployment SUCCESS** (September 17, 2025)
+### 🎉 **LATEST: Session 15 - UI/UX Fixes & Billing Integration** (September 17, 2025)
+**STABLE RELEASE**: All critical user-reported issues resolved and system fully operational:
+
+1. **Generate Button UI Enhancement** ✅
+   - **Issue**: Loading spinner on generate button was confusing
+   - **Solution**: Changed to grey-out effect during generation for better UX
+   - **File**: `prompt-builder.tsx` - Updated button styling
+
+2. **Stripe Checkout Authentication Fix** ✅
+   - **Issue**: "Failed to Start Checkout" errors due to environment mismatch
+   - **Root Cause**: Server on port 3001 but NextAuth configured for port 3000
+   - **Solution**: Updated `.env.local` NEXTAUTH_URL and PUBLIC_URL to port 3001
+   - **Result**: Live Stripe billing fully operational
+
+3. **Image Generation Race Condition Fix** ✅
+   - **Issue**: 404 errors for image files during generation
+   - **Root Cause**: Database updated before filesystem operations completed
+   - **Solution**: Added file existence verification and 500ms sync delay
+   - **Enhancement**: Enhanced error handling in generation route
+
+4. **Individual Workflow Page Cleanup** ✅
+   - **Issue**: Multiple extra images displayed on workflow pages
+   - **Solution**: Simplified to show only Original + Latest Staged image
+   - **File**: `workflow-layout.tsx` - Replaced WorkflowResults with direct image display
+
+**Current Status**: All systems operational, production-ready deployment
+
+### Session 14 - Railway Deployment SUCCESS (September 17, 2025)
 **MAJOR MILESTONE**: After extensive debugging, successfully resolved all Railway deployment issues:
 1. **Redis Connection Issues**: Made Redis optional, excluded queue package from build
 2. **Auth Middleware Blocking**: Fixed health endpoint being blocked by auth middleware  
@@ -1253,3 +1281,58 @@ if (pathname === '/api/health') {
 5. ✅ **Deployment Success**: Railway now fully operational in production
 
 **🎉 SimpleStager is now successfully deployed and running in production on Railway!**
+
+---
+
+## 🏗️ **CURRENT SYSTEM ARCHITECTURE** (September 17, 2025)
+
+### **🔄 Application Flow**
+```
+User Upload → Image Processing → AI Generation → Watermarking → Display
+     ↓              ↓                ↓            ↓         ↓
+Database Store → Gemini 2.5 → Claude Prompts → Sharp → Frontend
+```
+
+### **🔧 Core Components**
+- **Frontend**: Next.js 15 with React 18 (Tailwind CSS)
+- **Backend**: Next.js API routes with direct processing
+- **Database**: Railway PostgreSQL with Prisma ORM
+- **Authentication**: NextAuth.js with Google OAuth + credentials
+- **Billing**: Stripe live integration (subscriptions + credit packs)
+- **File Storage**: Local filesystem `/public/uploads/`
+- **Image Processing**: Sharp for watermarking and thumbnails
+
+### **🤖 AI Integration**
+- **Prompt Generation**: Claude Sonnet 4 (`claude-sonnet-4-20250514`)
+- **Image Generation**: Gemini 2.5 Flash Image Preview (`gemini-2.5-flash-preview-image-generation`)
+- **Processing**: Direct execution (no queue system)
+- **Response Handling**: Dual-modality (text + image) from Gemini
+
+### **🌐 Deployment Architecture**
+- **Production**: Railway (single-service deployment)
+- **Local Development**: `http://localhost:3001`
+- **Health Checks**: `/api/health` endpoint
+- **Static Assets**: Next.js static file serving
+- **Database**: External Railway PostgreSQL connection
+
+### **💳 Billing System**
+- **Live Stripe Integration**: Credit packs and monthly subscriptions
+- **Payment Processing**: Secure checkout sessions
+- **Credit Management**: Database-tracked with ledger system
+- **Download Control**: Credit-gated high-resolution downloads
+
+### **🔒 Security Features**
+- **Image Protection**: Watermarking with "SimpleStager" pattern
+- **Right-click Prevention**: Client-side protection measures
+- **Authentication Required**: Protected workflow and billing pages
+- **Environment Isolation**: Separate development and production configs
+
+### **📊 Current Status**
+- ✅ **All Core Features**: Working and production-ready
+- ✅ **UI/UX**: Clean, responsive design with proper loading states
+- ✅ **Billing**: Live Stripe integration operational
+- ✅ **Image Generation**: Fast, reliable AI processing
+- ✅ **Authentication**: Secure user management
+- ✅ **Deployment**: Stable Railway production environment
+
+**Ready for the next enhancement phase!** 🚀

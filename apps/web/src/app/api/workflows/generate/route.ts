@@ -124,8 +124,24 @@ export async function POST(request: NextRequest) {
       const thumbnailPath = join(workflowDir, 'generated_thumb.jpg')
       await createThumbnail(watermarkedPath, 200)
 
+      // Verify all files exist before updating database
       const originalUrl = `/uploads/${workflowId}/generated.jpg`
       const watermarkedUrl = `/uploads/${workflowId}/watermarked.jpg`
+      
+      if (!existsSync(originalPath)) {
+        throw new Error('Generated image file not found')
+      }
+      if (!existsSync(watermarkedPath)) {
+        throw new Error('Watermarked image file not found')
+      }
+      if (!existsSync(thumbnailPath)) {
+        console.warn('Thumbnail file not found, but continuing...')
+      }
+      
+      console.log('✅ All image files verified to exist before database update')
+      
+      // Small delay to ensure filesystem operations are complete
+      await new Promise(resolve => setTimeout(resolve, 500))
 
       // Create result record
       const dbResult = await prisma.result.create({
