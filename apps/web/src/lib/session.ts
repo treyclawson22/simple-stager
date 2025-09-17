@@ -11,7 +11,7 @@ export async function getCurrentUser() {
   const user = await prisma.user.findUnique({
     where: { id: (session.user as any).id },
     include: {
-      plan: true,
+      plans: true,
       creditLedger: {
         orderBy: { createdAt: 'desc' },
         take: 10,
