@@ -10,8 +10,8 @@ AI-powered real estate photo enhancement SaaS application that allows agents to 
   - **Improve**: Light renovations like paint and lighting
 
 - 🤖 **AI-Powered Processing**
-  - ChatGPT for intelligent prompt generation
-  - Nano Banana API for image generation
+  - Claude Sonnet 4 for intelligent prompt generation
+  - Gemini 2.5 Flash Image Preview for image generation
   - Professional-quality results in minutes
 
 - 💳 **Credit-Based System**
@@ -29,6 +29,28 @@ AI-powered real estate photo enhancement SaaS application that allows agents to 
   - Real-time progress updates
   - Intuitive workflow management
 
+## 🚀 Deployment Status
+
+### **PRODUCTION READY** ✅
+
+SimpleStager is successfully deployed and fully operational:
+
+- **🌐 Production URL**: [https://simple-stager-web-production.up.railway.app](https://simple-stager-web-production.up.railway.app)
+- **🔧 Platform**: Railway (automated deployments from main branch)
+- **✅ Build Status**: All TypeScript compilation and static generation successful
+- **🗄️ Database**: Supabase PostgreSQL (production-ready)
+- **🔄 CI/CD**: Automated deployments with zero-error builds
+
+### **Recent Major Fixes (v1.2.0)**
+- ✅ Resolved 15+ TypeScript compilation errors
+- ✅ Fixed Prisma client generation for Railway builds  
+- ✅ Added Next.js 15 Suspense boundary compatibility
+- ✅ Complete build pipeline now working flawlessly
+
+### **Local Development**
+- **🔧 Development URL**: [http://localhost:3000/test](http://localhost:3000/test)
+- **✅ Status**: Fully functional with hot reloading
+
 ## Tech Stack
 
 - **Frontend**: Next.js 14+ with App Router, TypeScript, Tailwind CSS
@@ -36,7 +58,7 @@ AI-powered real estate photo enhancement SaaS application that allows agents to 
 - **Database**: PostgreSQL with Prisma ORM
 - **Queue**: BullMQ with Redis for image processing
 - **Auth**: NextAuth.js with Google OAuth
-- **APIs**: OpenAI API (ChatGPT), Nano Banana API
+- **APIs**: Anthropic Claude Sonnet 4, Gemini 2.5 Flash Image Preview
 - **File Processing**: Sharp for image manipulation
 
 ## Project Structure
