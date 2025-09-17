@@ -1,6 +1,5 @@
 import NextAuth from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
-import AppleProvider from 'next-auth/providers/apple'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from '@simple-stager/database'
@@ -13,10 +12,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-    AppleProvider({
-      clientId: process.env.APPLE_ID!,
-      clientSecret: process.env.APPLE_SECRET!,
     }),
     CredentialsProvider({
       name: 'credentials',
@@ -156,7 +151,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         })
 
         if (!existingUser?.referralCode) {
-          const authProvider = user.image ? 'google' : 'apple'
+          const authProvider = 'google'
           
           await prisma.user.update({
             where: { id: user.id },
