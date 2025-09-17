@@ -318,7 +318,7 @@ export function TestWorkflowCreator({ userId, userCredits = 0, onCreditsUpdate, 
                     className="py-4"
                   />
                 </div>
-              ) : currentStep === 'results' && workflowId ? (
+              ) : (currentStep as any) === 'results' && workflowId ? (
                 <img 
                   src={`/uploads/${workflowId}/watermarked.jpg`}
                   alt="AI staged room"

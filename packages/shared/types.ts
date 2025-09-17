@@ -18,6 +18,7 @@ export interface PromptAnswers {
   palette?: string
   buyerProfile?: string
   notes?: string
+  projectName?: string
 }
 
 export interface WorkflowCreateData {

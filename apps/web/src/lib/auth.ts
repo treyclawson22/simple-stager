@@ -149,7 +149,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   events: {
     createUser: async ({ user }) => {
-      if (user.email && !user.id.startsWith('temp-')) {
+      if (user.email && user.id && !user.id.startsWith('temp-')) {
         // Only for OAuth users (Google/Apple)
         const existingUser = await prisma.user.findUnique({
           where: { id: user.id }

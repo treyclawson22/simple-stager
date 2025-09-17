@@ -16,6 +16,7 @@ export async function getCurrentUser() {
         orderBy: { createdAt: 'desc' },
         take: 10,
       },
+      referrals: true,
     },
   })
 

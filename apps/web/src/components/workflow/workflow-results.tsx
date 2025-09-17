@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { Download, RefreshCw, Eye, AlertCircle } from 'lucide-react'
-import { Workflow, Result, User, Plan } from '@simple-stager/database'
+import { Workflow, Result } from '@simple-stager/database'
 
 interface WorkflowResultsProps {
   workflow: Workflow & { results: Result[] }
-  user: User & { plan: Plan | null }
+  user: any
 }
 
 export function WorkflowResults({ workflow, user }: WorkflowResultsProps) {

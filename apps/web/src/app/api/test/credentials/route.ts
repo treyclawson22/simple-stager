@@ -47,10 +47,10 @@ export async function POST(request: NextRequest) {
       })
 
       // Store password hash
-      await prisma.userPassword.create({
+      await prisma.password.create({
         data: {
           userId: user.id,
-          passwordHash: hashedPassword,
+          hash: hashedPassword,
         }
       })
 
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Get password hash
-      const passwordRecord = await prisma.userPassword.findUnique({
+      const passwordRecord = await prisma.password.findUnique({
         where: { userId: user.id }
       })
 
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      const isValid = await bcrypt.compare(password, passwordRecord.passwordHash)
+      const isValid = await bcrypt.compare(password, passwordRecord.hash)
       
       if (!isValid) {
         return NextResponse.json({ 

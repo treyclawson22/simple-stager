@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Workflow, WorkflowGoal } from '@simple-stager/database'
+import { Workflow } from '@simple-stager/database'
+import { WorkflowGoal } from '@simple-stager/shared'
 
 interface WorkflowEditFormProps {
   workflow: Workflow

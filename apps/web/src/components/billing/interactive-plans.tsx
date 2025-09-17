@@ -1,10 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { User, Plan } from '@simple-stager/database'
-
 interface InteractivePlansProps {
-  user: (User & { plan: Plan | null }) | null
+  user: any
 }
 
 interface PlanOption {
@@ -73,7 +71,7 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
   
   // Check if user is eligible for referral discount
   // This would be set during signup and stored in user profile
-  const isEligibleForReferralDiscount = user?.referralDiscount && !user?.hasUsedReferralDiscount && !user?.plan
+  const isEligibleForReferralDiscount = (user as any)?.referralDiscount && !(user as any)?.hasUsedReferralDiscount && !user?.plan
 
   const handlePlanSelect = (planName: string) => {
     if (planName === currentPlanName) {

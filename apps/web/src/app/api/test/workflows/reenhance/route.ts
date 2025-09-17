@@ -68,7 +68,7 @@ Maintain the overall style and quality while implementing only the requested fur
       }
 
       // Handle the generated image (data URL from Gemini)
-      let newImageBuffer: ArrayBuffer
+      let newImageBuffer: Buffer
       
       if (result.imageUrl.startsWith('data:')) {
         // Handle base64 data URL from Gemini
@@ -82,7 +82,8 @@ Maintain the overall style and quality while implementing only the requested fur
           console.error('Failed to fetch re-enhanced image from:', result.imageUrl, 'Status:', response.status)
           throw new Error(`Failed to download re-enhanced image: ${response.status} ${response.statusText}`)
         }
-        newImageBuffer = await response.arrayBuffer()
+        const arrayBuffer = await response.arrayBuffer()
+        newImageBuffer = Buffer.from(arrayBuffer)
       }
       
       if (newImageBuffer.byteLength === 0) {

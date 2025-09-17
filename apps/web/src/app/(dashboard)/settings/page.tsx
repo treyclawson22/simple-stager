@@ -20,6 +20,16 @@ export default async function SettingsPage() {
 
   const displayUser = user || mockUser
 
+  // Transform user for AccountSettings component
+  const settingsUser = {
+    id: displayUser.id,
+    firstName: (displayUser as any).firstName || displayUser.name?.split(' ')[0] || 'User',
+    lastName: (displayUser as any).lastName || displayUser.name?.split(' ')[1] || '',
+    name: displayUser.name || 'User',
+    email: displayUser.email,
+    credits: displayUser.credits
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -29,7 +39,7 @@ export default async function SettingsPage() {
         </p>
       </div>
 
-      <AccountSettings user={displayUser} />
+      <AccountSettings user={settingsUser} />
     </div>
   )
 }

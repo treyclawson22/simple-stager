@@ -111,7 +111,7 @@ export function TestPromptBuilder({ workflowId, goal, onGenerate, sourceImageUrl
             </label>
             {question.type === 'select' ? (
               <select
-                value={answers[question.key] || ''}
+                value={(answers as any)[question.key] || ''}
                 onChange={(e) => handleAnswerChange(question.key, e.target.value)}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               >
@@ -124,7 +124,7 @@ export function TestPromptBuilder({ workflowId, goal, onGenerate, sourceImageUrl
               </select>
             ) : (
               <textarea
-                value={answers[question.key] || ''}
+                value={(answers as any)[question.key] || ''}
                 onChange={(e) => handleAnswerChange(question.key, e.target.value)}
                 placeholder={question.placeholder}
                 rows={3}

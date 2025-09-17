@@ -3,10 +3,8 @@
 import { signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { User, Plan } from '@simple-stager/database'
-
 interface DashboardNavProps {
-  user?: (User & { plan: Plan | null }) | null
+  user?: any
 }
 
 export function DashboardNav({ user }: DashboardNavProps) {

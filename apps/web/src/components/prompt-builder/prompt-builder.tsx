@@ -174,9 +174,9 @@ export function PromptBuilder({ workflowId, goal, onGenerate }: PromptBuilderPro
               />
             )}
             
-            {errors[question.key] && (
+            {(errors as any)[question.key] && (
               <p className="mt-1 text-sm text-red-600">
-                {errors[question.key]?.message}
+                {(errors as any)[question.key]?.message}
               </p>
             )}
           </div>

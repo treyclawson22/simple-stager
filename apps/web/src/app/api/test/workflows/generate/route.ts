@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Handle the generated image (could be data URL from Gemini or external URL)
-      let imageBuffer: ArrayBuffer
+      let imageBuffer: Buffer
       
       if (result.imageUrl.startsWith('data:')) {
         // Handle base64 data URL from Gemini
@@ -72,7 +72,8 @@ export async function POST(request: NextRequest) {
           console.error('Failed to fetch image from:', result.imageUrl, 'Status:', response.status)
           throw new Error(`Failed to download generated image: ${response.status} ${response.statusText}`)
         }
-        imageBuffer = await response.arrayBuffer()
+        const arrayBuffer = await response.arrayBuffer()
+        imageBuffer = Buffer.from(arrayBuffer)
       }
       
       if (imageBuffer.byteLength === 0) {

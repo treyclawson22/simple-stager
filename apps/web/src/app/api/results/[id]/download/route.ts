@@ -59,7 +59,7 @@ export async function POST(
           userId: user.id,
           delta: -1,
           reason: 'download',
-          meta: { resultId: result.id },
+          meta: JSON.stringify({ resultId: result.id }),
         },
       }),
       prisma.result.update({
