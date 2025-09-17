@@ -8,13 +8,12 @@ restartPolicyType = "on_failure"
 
 [[services]]
 name = "web"
-source = "apps/web"
 
 [services.web.build]
-buildCommand = "npm run build"
+buildCommand = "npm install && npm run build --workspace=apps/web"
 
 [services.web.deploy]
-startCommand = "npm start"
+startCommand = "npm start --workspace=apps/web"
 
 [[services]]
 name = "worker"  
