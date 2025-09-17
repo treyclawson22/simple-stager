@@ -26,21 +26,21 @@ const plans: PlanOption[] = [
     pricePerCredit: 'No monthly billing'
   },
   {
-    name: 'Entry',
+    name: 'entry',
     price: 24,
     credits: 15,
     description: 'For new agents testing virtual staging',
     pricePerCredit: '$1.60/credit'
   },
   {
-    name: 'Showcase',
+    name: 'showcase',
     price: 32,
     credits: 25,
     description: 'Great for agents listing multiple homes',
     pricePerCredit: '$1.28/credit'
   },
   {
-    name: 'Prime',
+    name: 'prime',
     price: 49,
     credits: 50,
     description: 'Best balance of value and volume',
@@ -49,14 +49,14 @@ const plans: PlanOption[] = [
     badgeColor: 'yellow'
   },
   {
-    name: 'Prestige',
+    name: 'prestige',
     price: 89,
     credits: 100,
     description: 'For busy agents and boutique broker teams',
     pricePerCredit: '$0.89/credit'
   },
   {
-    name: 'Portfolio',
+    name: 'portfolio',
     price: 149,
     credits: 300,
     description: 'Scales for high-volume brokerages and teams',
@@ -95,11 +95,11 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
     try {
       // Map plan names to IDs for Stripe
       const planIdMap: Record<string, string> = {
-        'Entry': 'entry',
-        'Showcase': 'showcase', 
-        'Prime': 'prime',
-        'Prestige': 'prestige',
-        'Portfolio': 'portfolio'
+        'entry': 'entry',
+        'showcase': 'showcase', 
+        'prime': 'prime',
+        'prestige': 'prestige',
+        'portfolio': 'portfolio'
       }
       
       const planId = planIdMap[selectedPlan]
@@ -204,7 +204,7 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
           >
             <div className="flex justify-between items-start mb-2">
               <h4 className="font-semibold text-gray-900">
-                {plan.name} {plan.name === 'Prime' && '⭐'} {plan.name === 'Portfolio' && '🏆'}
+                {plan.name === 'Free Credits' ? plan.name : plan.name.charAt(0).toUpperCase() + plan.name.slice(1)} {plan.name === 'prime' && '⭐'} {plan.name === 'portfolio' && '🏆'}
               </h4>
               <div className="flex flex-col items-end">
                 {plan.name === currentPlanName && (
@@ -249,40 +249,38 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
         ))}
       </div>
 
-      {/* Action Buttons */}
-      <div className="mt-6 flex justify-between items-center">
-        <div className="text-sm text-gray-500">
-          {selectedPlan ? (
-            isUpgrade ? (
+      {/* Action Buttons - Only show when a new package is selected */}
+      {selectedPlan && (
+        <div className="mt-6 flex justify-between items-center">
+          <div className="text-sm text-gray-500">
+            {isUpgrade ? (
               <>Upgrades take effect immediately upon confirmation.{isEligibleForReferralDiscount && " Your 25% referral discount will be applied!"}</>
             ) : isDowngrade ? (
               <>Downgrades take effect on your next billing cycle.</>
             ) : (
               <>Ready to make changes to your plan.{isEligibleForReferralDiscount && " Your 25% referral discount will be applied!"}</>
-            )
-          ) : (
-            <>Select a different plan above to upgrade or downgrade.{isEligibleForReferralDiscount && " You have a 25% referral discount available!"}</>
-          )}
+            )}
+          </div>
+          
+          <div className="flex space-x-3">
+            <button 
+              onClick={handleCancel}
+              disabled={isConfirming}
+              className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={handleConfirmChange}
+              disabled={isConfirming}
+              className="px-4 py-2 text-white text-sm font-medium rounded-md hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed" 
+              style={{ backgroundColor: '#089AB2' }}
+            >
+              {isConfirming ? 'Processing...' : isUpgrade ? 'Upgrade' : isDowngrade ? 'Downgrade' : 'Confirm Changes'}
+            </button>
+          </div>
         </div>
-        
-        <div className="flex space-x-3">
-          <button 
-            onClick={handleCancel}
-            disabled={!selectedPlan || isConfirming}
-            className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={handleConfirmChange}
-            disabled={!selectedPlan || isConfirming}
-            className="px-4 py-2 text-white text-sm font-medium rounded-md hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed" 
-            style={{ backgroundColor: '#089AB2' }}
-          >
-            {isConfirming ? 'Processing...' : 'Confirm Changes'}
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   )
 }

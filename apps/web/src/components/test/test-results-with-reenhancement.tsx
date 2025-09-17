@@ -13,6 +13,7 @@ interface TestResultsWithReenhancementProps {
   onCreditsUpdate?: (newCredits: number) => void
   originalPrompt?: string
   projectName?: string
+  isAuthenticated?: boolean
 }
 
 export function TestResultsWithReenhancement({ 
@@ -23,7 +24,8 @@ export function TestResultsWithReenhancement({
   userCredits = 0,
   onCreditsUpdate,
   originalPrompt = '',
-  projectName = ''
+  projectName = '',
+  isAuthenticated = false
 }: TestResultsWithReenhancementProps) {
   const [showReenhancementForm, setShowReenhancementForm] = useState(false)
   const [reenhancementPrompt, setReenhancementPrompt] = useState('')
@@ -51,37 +53,70 @@ export function TestResultsWithReenhancement({
     setIsReenhancing(true)
     
     try {
-      // Create FormData to send the current enhanced image and new prompt
-      const formData = new FormData()
-      
-      // Convert the current enhanced image to a blob and attach it
-      const response = await fetch(`/uploads/${workflowId}/generated.jpg`)
-      const imageBlob = await response.blob()
-      formData.append('sourceImage', imageBlob, 'enhanced.jpg')
-      formData.append('prompt', reenhancementPrompt)
-      formData.append('goal', goal)
-      formData.append('workflowId', workflowId)
+      if (isAuthenticated) {
+        // Use authenticated reenhancement endpoint
+        const response = await fetch('/api/workflows/reenhance', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            workflowId,
+            prompt: reenhancementPrompt.trim(),
+            baseImagePath: latestFullResUrl
+          }),
+        })
 
-      const enhanceResponse = await fetch('/api/test/workflows/reenhance', {
-        method: 'POST',
-        body: formData
-      })
+        if (!response.ok) {
+          throw new Error('Re-enhancement failed')
+        }
 
-      if (!enhanceResponse.ok) {
-        throw new Error('Re-enhancement failed')
+        const result = await response.json()
+        
+        // Update the displayed image
+        const timestamp = Date.now()
+        const newImageUrl = `/uploads/${workflowId}/watermarked.jpg?t=${timestamp}`
+        const newFullResUrl = `/uploads/${workflowId}/reenhanced.jpg`
+        
+        setCurrentImageUrl(newImageUrl)
+        setLatestFullResUrl(newFullResUrl)
+        setReenhancedImageUrl(newImageUrl)
+        setEditCount(prev => prev + 1)
+        setShowReenhancementForm(false)
+        setReenhancementPrompt('')
+      } else {
+        // Create FormData to send the current enhanced image and new prompt
+        const formData = new FormData()
+        
+        // Convert the current enhanced image to a blob and attach it
+        const response = await fetch(`/uploads/${workflowId}/generated.jpg`)
+        const imageBlob = await response.blob()
+        formData.append('sourceImage', imageBlob, 'enhanced.jpg')
+        formData.append('prompt', reenhancementPrompt)
+        formData.append('goal', goal)
+        formData.append('workflowId', workflowId)
+
+        const enhanceResponse = await fetch('/api/test/workflows/reenhance', {
+          method: 'POST',
+          body: formData
+        })
+
+        if (!enhanceResponse.ok) {
+          throw new Error('Re-enhancement failed')
+        }
+
+        const result = await enhanceResponse.json()
+        
+        // Update the current image URL to show the newly enhanced version
+        setReenhancedImageUrl(result.watermarkedUrl)
+        setCurrentImageUrl(result.watermarkedUrl)
+        setLatestFullResUrl(result.imageUrl)
+        setReenhancementPrompt('')
+        setShowReenhancementForm(false)
+        
+        // Increment edit counter
+        setEditCount(prev => prev + 1)
       }
-
-      const result = await enhanceResponse.json()
-      
-      // Update the current image URL to show the newly enhanced version
-      setReenhancedImageUrl(result.watermarkedUrl)
-      setCurrentImageUrl(result.watermarkedUrl)
-      setLatestFullResUrl(result.imageUrl)
-      setReenhancementPrompt('')
-      setShowReenhancementForm(false)
-      
-      // Increment edit counter
-      setEditCount(prev => prev + 1)
       
     } catch (error) {
       console.error('Re-enhancement error:', error)
@@ -97,38 +132,8 @@ export function TestResultsWithReenhancement({
       return
     }
 
-    try {
-      // Call API to deduct credits and record download
-      const response = await fetch('/api/test/workflows/download', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          workflowId: workflowId
-        }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        alert(result.error || 'Failed to process download')
-        return
-      }
-
-      // Update credits in parent component if callback provided
-      if (onCreditsUpdate) {
-        console.log('Credit update callback exists, calling with:', result.creditsRemaining)
-        onCreditsUpdate(result.creditsRemaining)
-      } else {
-        console.log('No credit update callback provided')
-        // Fallback: refresh to show updated credits  
-        window.location.reload()
-      }
-
-      setHasDownloaded(true)
-      
-      // Trigger the actual download
+    if (hasDownloaded) {
+      // Already downloaded, just download the file
       const link = document.createElement('a')
       link.href = latestFullResUrl
       const fileName = projectName.trim() 
@@ -138,7 +143,86 @@ export function TestResultsWithReenhancement({
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+      return
+    }
 
+    try {
+      if (isAuthenticated) {
+        // Use authenticated download endpoint
+        const response = await fetch('/api/workflows/download', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ workflowId }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to process download')
+        }
+
+        const result = await response.json()
+        
+        // Update credits
+        if (onCreditsUpdate) {
+          onCreditsUpdate(result.creditsRemaining)
+        }
+        
+        setHasDownloaded(true)
+        
+        // Download the file
+        const link = document.createElement('a')
+        link.href = latestFullResUrl
+        const fileName = projectName.trim() 
+          ? `${projectName.trim()} - Virtually Staged.jpg`
+          : `Virtually Staged - ${workflowId}.jpg`
+        link.download = fileName
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } else {
+        // Use test download endpoint
+        const response = await fetch('/api/test/workflows/download', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            workflowId: workflowId
+          }),
+        })
+
+        const result = await response.json()
+
+        if (!response.ok) {
+          alert(result.error || 'Failed to process download')
+          return
+        }
+
+        // Update credits in parent component if callback provided
+        if (onCreditsUpdate) {
+          console.log('Credit update callback exists, calling with:', result.creditsRemaining)
+          onCreditsUpdate(result.creditsRemaining)
+        } else {
+          console.log('No credit update callback provided')
+          // Fallback: refresh to show updated credits  
+          window.location.reload()
+        }
+
+        setHasDownloaded(true)
+        
+        // Trigger the actual download
+        const link = document.createElement('a')
+        link.href = latestFullResUrl
+        const fileName = projectName.trim() 
+          ? `${projectName.trim()} - Virtually Staged.jpg`
+          : `Virtually Staged - ${workflowId}.jpg`
+        link.download = fileName
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      }
     } catch (error) {
       console.error('Download error:', error)
       alert('Failed to process download. Please try again.')

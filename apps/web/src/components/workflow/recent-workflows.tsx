@@ -49,7 +49,7 @@ export async function RecentWorkflows({ userId }: RecentWorkflowsProps) {
           <div key={workflow.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
             <div className="flex items-center justify-between">
               <Link
-                href={workflow.status === 'ready' ? `/dashboard?resume=${workflow.id}` : `/workflow/${workflow.id}`}
+                href={workflow.status === 'completed' ? `/workflow/${workflow.id}` : `/dashboard?resume=${workflow.id}`}
                 className="flex items-center space-x-4 flex-1"
               >
                 {workflow.results.length > 0 && workflow.results[0].watermarkedUrl ? (
@@ -95,7 +95,7 @@ export async function RecentWorkflows({ userId }: RecentWorkflowsProps) {
                     ? 'bg-blue-100 text-blue-800'
                     : 'bg-gray-100 text-gray-800'
                 }`}>
-                  {workflow.status === 'ready' ? 'Continue' : workflow.status}
+                  {workflow.status === 'completed' ? 'View' : 'Continue'}
                 </span>
                 
                 {workflow.results.length > 0 && (

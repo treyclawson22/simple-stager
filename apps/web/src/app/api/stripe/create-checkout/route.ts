@@ -80,7 +80,13 @@ export async function POST(request: NextRequest) {
         quantity: 1,
       }]
 
-      // Add credit pack metadata
+      // Add credit pack metadata to both session and payment_intent for webhook compatibility
+      sessionConfig.metadata = {
+        ...sessionConfig.metadata,
+        packId: planId,
+        credits: pack.credits.toString(),
+      }
+      
       sessionConfig.payment_intent_data = {
         metadata: {
           userId: user.id,
@@ -93,6 +99,12 @@ export async function POST(request: NextRequest) {
     }
 
     const session = await stripe.checkout.sessions.create(sessionConfig)
+    
+    console.log('🔍 DEBUG: Checkout session created')
+    console.log('Session ID:', session.id)
+    console.log('Session livemode:', session.livemode)
+    console.log('Session mode:', session.mode)
+    console.log('Price ID used:', sessionConfig.line_items[0]?.price)
 
     return NextResponse.json({ url: session.url })
   } catch (error) {

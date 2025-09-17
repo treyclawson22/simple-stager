@@ -100,7 +100,7 @@ export function DashboardNav({ user }: DashboardNavProps) {
             
             <div className="relative flex items-center">
               <button
-                onClick={() => signOut()}
+                onClick={() => signOut({ callbackUrl: '/' })}
                 className="text-sm font-medium hover:text-gray-700"
                 style={{ color: '#6B7280' }}
               >

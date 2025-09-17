@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { TestWorkflowCreator } from '@/components/test/test-workflow-creator'
+import { WorkflowCreator } from '@/components/dashboard/workflow-creator'
 import { ReferralProgram } from '@/components/dashboard/referral-program'
 
 interface DashboardUser {
@@ -56,7 +56,7 @@ export function DashboardClient({ initialUser, resumeWorkflowId }: DashboardClie
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2">
-        <TestWorkflowCreator 
+        <WorkflowCreator 
           userId={user.id} 
           userCredits={user.credits}
           onCreditsUpdate={handleCreditsUpdate}

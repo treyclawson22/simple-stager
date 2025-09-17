@@ -18,55 +18,60 @@ export const SUBSCRIPTION_PLANS = {
     name: 'Entry',
     price: 24,
     credits: 15,
-    stripePriceId: process.env.STRIPE_ENTRY_PRICE_ID || '',
+    stripePriceId: 'price_1S8G8fGii48xiWlx6VEYhAxk', // Live mode - verified
   },
   showcase: {
     name: 'Showcase', 
     price: 32,
     credits: 25,
-    stripePriceId: process.env.STRIPE_SHOWCASE_PRICE_ID || '',
+    stripePriceId: 'price_1S8G8vGii48xiWlxBwR1dUzy', // Live mode - verified
   },
   prime: {
     name: 'Prime',
     price: 49,
     credits: 50,
-    stripePriceId: process.env.STRIPE_PRIME_PRICE_ID || '',
+    stripePriceId: 'price_1S8G9HGii48xiWlxBlXRnY5r', // Live mode - verified
   },
   prestige: {
     name: 'Prestige',
     price: 89,
     credits: 100,
-    stripePriceId: process.env.STRIPE_PRESTIGE_PRICE_ID || '',
+    stripePriceId: 'price_1S8G9HGii48xiWlx57XSEFb7', // Live mode - verified
   },
   portfolio: {
     name: 'Portfolio',
     price: 149,
     credits: 300,
-    stripePriceId: process.env.STRIPE_PORTFOLIO_PRICE_ID || '',
+    stripePriceId: 'price_1S8G9IGii48xiWlxe2X1TyaA', // Live mode - verified
   },
 } as const
 
-// One-time credit pack configuration
+// Debug environment variables
+console.log('🔍 STRIPE ENV DEBUG:')
+console.log('STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY?.substring(0, 12) + '...')
+console.log('STRIPE_PACK_5_PRICE_ID:', process.env.STRIPE_PACK_5_PRICE_ID)
+
+// One-time credit pack configuration  
 export const CREDIT_PACKS = {
   pack_5: {
     credits: 5,
     price: 15,
-    stripePriceId: process.env.STRIPE_PACK_5_PRICE_ID || '',
+    stripePriceId: 'price_1S8G9fGii48xiWlxR0Rdtx0U', // Live mode - verified
   },
   pack_10: {
     credits: 10,
     price: 27,
-    stripePriceId: process.env.STRIPE_PACK_10_PRICE_ID || '',
+    stripePriceId: 'price_1S8G9fGii48xiWlx7q0kNTZQ', // Live mode - verified
   },
   pack_20: {
     credits: 20,
     price: 45,
-    stripePriceId: process.env.STRIPE_PACK_20_PRICE_ID || '',
+    stripePriceId: 'price_1S8G9gGii48xiWlx2i3hHjUL', // Live mode - verified
   },
   pack_50: {
     credits: 50,
     price: 105,
-    stripePriceId: process.env.STRIPE_PACK_50_PRICE_ID || '',
+    stripePriceId: 'price_1S8G9gGii48xiWlxlKWUYBms', // Live mode - verified
   },
 } as const
 

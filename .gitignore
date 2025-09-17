@@ -62,4 +62,4 @@ temp/
 .turbo/
 
 # Prisma
-prisma/migrations/
+prisma/migrations/packages/database/dev.db

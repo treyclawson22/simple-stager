@@ -2,6 +2,46 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/session'
 import { prisma } from '@simple-stager/database'
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const resolvedParams = await params
+    const workflowId = resolvedParams.id
+
+    // Get workflow with results
+    const workflow = await prisma.workflow.findFirst({
+      where: {
+        id: workflowId,
+        userId: user.id,
+      },
+      include: {
+        results: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    })
+
+    if (!workflow) {
+      return NextResponse.json({ error: 'Workflow not found' }, { status: 404 })
+    }
+
+    return NextResponse.json(workflow)
+  } catch (error) {
+    console.error('Get workflow error:', error)
+    return NextResponse.json(
+      { error: 'Failed to get workflow' },
+      { status: 500 }
+    )
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Create upload directory if it doesn't exist
-    const uploadDir = join(process.cwd(), 'apps/web/public/uploads', workflow.id)
+    const uploadDir = join(process.cwd(), 'public/uploads', workflow.id)
     if (!existsSync(uploadDir)) {
       await mkdir(uploadDir, { recursive: true })
     }

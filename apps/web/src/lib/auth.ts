@@ -142,39 +142,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
     }),
   ],
-  events: {
-    createUser: async ({ user }) => {
-      if (user.email && user.id && !user.id.startsWith('temp-')) {
-        // Only for OAuth users (Google/Apple)
-        const existingUser = await prisma.user.findUnique({
-          where: { id: user.id }
-        })
-
-        if (!existingUser?.referralCode) {
-          const authProvider = 'google'
-          
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              authProvider,
-              credits: 3,
-              referralCode: generateReferralCode(),
-            },
-          })
-          
-          // Add initial trial credits to ledger
-          await prisma.creditLedger.create({
-            data: {
-              userId: user.id,
-              delta: 3,
-              reason: 'trial',
-              meta: JSON.stringify({ message: 'Welcome! Free trial credits' }),
-            },
-          })
-        }
-      }
-    },
-  },
   pages: {
     signIn: '/',
     signOut: '/',
@@ -201,6 +168,49 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       // Default to baseUrl
       return baseUrl
+    },
+    signIn: async ({ user, account }) => {
+      if (account?.provider === 'google' && user.email) {
+        try {
+          // Check if user already exists
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email }
+          })
+
+          if (!existingUser) {
+            // Create new user for Google OAuth
+            const newUser = await prisma.user.create({
+              data: {
+                email: user.email,
+                name: user.name || null,
+                authProvider: 'google',
+                credits: 3,
+                referralCode: generateReferralCode(),
+              }
+            })
+
+            // Add initial trial credits to ledger
+            await prisma.creditLedger.create({
+              data: {
+                userId: newUser.id,
+                delta: 3,
+                reason: 'trial',
+                meta: JSON.stringify({ message: 'Welcome! Free trial credits' }),
+              },
+            })
+
+            // Set the user ID for the session
+            user.id = newUser.id
+          } else {
+            // Use existing user ID
+            user.id = existingUser.id
+          }
+        } catch (error) {
+          console.error('Error creating/finding user:', error)
+          return false
+        }
+      }
+      return true
     },
     jwt: async ({ token, user }) => {
       if (user) {
