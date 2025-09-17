@@ -103,36 +103,42 @@ function SignupForm() {
     }
     
     try {
-      console.log('Attempting signup with data:', {
-        email: formData.email,
-        name: `${formData.firstName} ${formData.lastName}`.trim(),
-        isSignUp: 'true'
+      // Create account directly via API instead of using NextAuth signIn
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          name: `${formData.firstName} ${formData.lastName}`.trim(),
+        }),
       })
-      
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Signup failed')
+      }
+
+      // Now sign in the user after successful account creation
       const result = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
-        name: `${formData.firstName} ${formData.lastName}`.trim(),
-        isSignUp: 'true',
+        isSignUp: 'false', // Now signing in, not signing up
         redirect: false,
       })
 
-      console.log('Signup result:', result)
-
       if (result?.error) {
-        console.error('Signup failed with error:', result.error)
-        alert('Signup failed: ' + result.error)
+        alert('Account created but sign-in failed: ' + result.error)
       } else if (result?.ok) {
-        console.log('Signup successful, redirecting to dashboard')
-        // Redirect to dashboard on successful signup
+        // Redirect to dashboard on successful sign-in
         window.location.href = '/dashboard'
-      } else {
-        console.log('Unexpected signup result:', result)
-        alert('Signup failed: Unexpected response')
       }
     } catch (error) {
       console.error('Signup error:', error)
-      alert('Signup failed. Please try again.')
+      alert('Signup failed: ' + (error as Error).message)
     } finally {
       setIsLoading(false)
     }
