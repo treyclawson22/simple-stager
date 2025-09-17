@@ -79,8 +79,8 @@ function SignInForm() {
         </div>
 
         <div className="space-y-6">
-          {/* OAuth Providers - Temporarily hidden during Google verification process */}
-          {false && (
+          {/* OAuth Providers */}
+          {true && (
             <>
               <div className="space-y-3">
                 <button

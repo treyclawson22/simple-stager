@@ -163,8 +163,8 @@ function SignupForm() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {/* OAuth Providers - Temporarily hidden during Google verification process */}
-          {false && (
+          {/* OAuth Providers */}
+          {true && (
             <>
               <div className="space-y-3 mb-6">
                 <button
