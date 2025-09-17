@@ -393,13 +393,23 @@ function SignupForm() {
             <div className="text-center">
               <p className="text-xs text-gray-500">
                 By signing up, you agree to our{' '}
-                <Link href="/terms" className="text-teal-600 hover:text-teal-500">
+                <a 
+                  href="https://simplestager.com/terms" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-teal-600 hover:text-teal-500"
+                >
                   Terms of Service
-                </Link>{' '}
+                </a>{' '}
                 and{' '}
-                <Link href="/privacy" className="text-teal-600 hover:text-teal-500">
+                <a 
+                  href="https://simplestager.com/privacy" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-teal-600 hover:text-teal-500"
+                >
                   Privacy Policy
-                </Link>
+                </a>
               </p>
             </div>
           </div>
