@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@simple-stager/database'
 import { generateReferralCode } from '@simple-stager/shared'
+import { withDatabaseRetry } from '@/lib/db-retry'
 import bcrypt from 'bcryptjs'
 
 export async function POST(request: NextRequest) {
@@ -21,66 +22,76 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    })
+    // Wrap database operations in retry logic to handle Supabase wake-up delays
+    const user = await withDatabaseRetry(async () => {
+      // Check if user already exists
+      const existingUser = await prisma.user.findUnique({
+        where: { email }
+      })
 
-    if (existingUser) {
-      return NextResponse.json(
-        { error: 'User already exists with this email' },
-        { status: 400 }
-      )
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12)
-    const referralCode = generateReferralCode()
-
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name: name || null,
-        authProvider: 'password',
-        credits: 3,
-        referralCode,
+      if (existingUser) {
+        throw new Error('User already exists with this email')
       }
-    })
 
-    // Store password hash
-    await prisma.password.create({
-      data: {
-        userId: user.id,
-        hash: hashedPassword,
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 12)
+      const referralCode = generateReferralCode()
+
+      // Create user
+      const newUser = await prisma.user.create({
+        data: {
+          email,
+          name: name || null,
+          authProvider: 'password',
+          credits: 3,
+          referralCode,
+        }
+      })
+
+      // Store password hash
+      await prisma.password.create({
+        data: {
+          userId: newUser.id,
+          hash: hashedPassword,
+        }
+      })
+
+      // Add initial trial credits to ledger
+      await prisma.creditLedger.create({
+        data: {
+          userId: newUser.id,
+          delta: 3,
+          reason: 'trial',
+          meta: JSON.stringify({ message: 'Welcome! Free trial credits' }),
+        },
+      })
+
+      return {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
       }
-    })
-
-    // Add initial trial credits to ledger
-    await prisma.creditLedger.create({
-      data: {
-        userId: user.id,
-        delta: 3,
-        reason: 'trial',
-        meta: JSON.stringify({ message: 'Welcome! Free trial credits' }),
-      },
-    })
+    }, { maxRetries: 5, delay: 2000 }) // Increased retries and delay for Supabase
 
     return NextResponse.json({
       success: true,
       message: 'Account created successfully',
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-      }
+      user
     })
 
   } catch (error) {
     console.error('Signup API error:', error)
     
+    // Check if it's a user validation error vs database error
+    if ((error as Error).message === 'User already exists with this email') {
+      return NextResponse.json(
+        { error: 'User already exists with this email' },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to create account' },
+      { error: 'Failed to create account. Please try again.' },
       { status: 500 }
     )
   }

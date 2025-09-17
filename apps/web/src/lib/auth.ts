@@ -4,6 +4,7 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from '@simple-stager/database'
 import { generateReferralCode } from '@simple-stager/shared'
+import { withDatabaseRetry } from '@/lib/db-retry'
 import bcrypt from 'bcryptjs'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -39,39 +40,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return null
           }
 
-          // Sign in flow
-          const user = await prisma.user.findUnique({
-            where: { email }
-          })
+          // Sign in flow with database retry logic
+          return await withDatabaseRetry(async () => {
+            const user = await prisma.user.findUnique({
+              where: { email }
+            })
 
-          if (!user) {
-            return null
-          }
+            if (!user) {
+              return null
+            }
 
-          if (user.authProvider !== 'password') {
-            return null
-          }
+            if (user.authProvider !== 'password') {
+              return null
+            }
 
-          // Get password hash
-          const passwordRecord = await prisma.password.findUnique({
-            where: { userId: user.id }
-          })
+            // Get password hash
+            const passwordRecord = await prisma.password.findUnique({
+              where: { userId: user.id }
+            })
 
-          if (!passwordRecord) {
-            return null
-          }
+            if (!passwordRecord) {
+              return null
+            }
 
-          const isValid = await bcrypt.compare(password, passwordRecord.hash)
-          
-          if (!isValid) {
-            return null
-          }
+            const isValid = await bcrypt.compare(password, passwordRecord.hash)
+            
+            if (!isValid) {
+              return null
+            }
 
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-          }
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+            }
+          }, { maxRetries: 3, delay: 1000 })
         } catch (error) {
           console.error('Auth error:', error)
           throw error
@@ -109,39 +112,42 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: async ({ user, account }) => {
       if (account?.provider === 'google' && user.email) {
         try {
-          // Check if user already exists
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email }
-          })
-
-          if (!existingUser) {
-            // Create new user for Google OAuth
-            const newUser = await prisma.user.create({
-              data: {
-                email: user.email,
-                name: user.name || null,
-                authProvider: 'google',
-                credits: 3,
-                referralCode: generateReferralCode(),
-              }
+          // Wrap Google OAuth database operations in retry logic
+          await withDatabaseRetry(async () => {
+            // Check if user already exists
+            const existingUser = await prisma.user.findUnique({
+              where: { email: user.email }
             })
 
-            // Add initial trial credits to ledger
-            await prisma.creditLedger.create({
-              data: {
-                userId: newUser.id,
-                delta: 3,
-                reason: 'trial',
-                meta: JSON.stringify({ message: 'Welcome! Free trial credits' }),
-              },
-            })
+            if (!existingUser) {
+              // Create new user for Google OAuth
+              const newUser = await prisma.user.create({
+                data: {
+                  email: user.email,
+                  name: user.name || null,
+                  authProvider: 'google',
+                  credits: 3,
+                  referralCode: generateReferralCode(),
+                }
+              })
 
-            // Set the user ID for the session
-            user.id = newUser.id
-          } else {
-            // Use existing user ID
-            user.id = existingUser.id
-          }
+              // Add initial trial credits to ledger
+              await prisma.creditLedger.create({
+                data: {
+                  userId: newUser.id,
+                  delta: 3,
+                  reason: 'trial',
+                  meta: JSON.stringify({ message: 'Welcome! Free trial credits' }),
+                },
+              })
+
+              // Set the user ID for the session
+              user.id = newUser.id
+            } else {
+              // Use existing user ID
+              user.id = existingUser.id
+            }
+          }, { maxRetries: 3, delay: 1000 })
         } catch (error) {
           console.error('Error creating/finding user:', error)
           return false
