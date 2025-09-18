@@ -48,13 +48,13 @@ export async function POST(request: NextRequest) {
         <div style="display: flex; gap: 20px; flex-wrap: wrap;">
           <div>
             <h4>Original Image:</h4>
-            <img src="${process.env.PUBLIC_URL || 'http://localhost:3000'}${originalImageUrl}" 
+            <img src="${process.env.PUBLIC_URL || 'https://app.simplestager.com'}${originalImageUrl}" 
                  alt="Original room" 
                  style="max-width: 300px; border: 1px solid #ccc; border-radius: 5px;" />
           </div>
           <div>
             <h4>Staged Result:</h4>
-            <img src="${process.env.PUBLIC_URL || 'http://localhost:3000'}${stagedImageUrl}" 
+            <img src="${process.env.PUBLIC_URL || 'https://app.simplestager.com'}${stagedImageUrl}" 
                  alt="Staged room" 
                  style="max-width: 300px; border: 1px solid #ccc; border-radius: 5px;" />
           </div>
@@ -78,8 +78,8 @@ User Feedback:
 Original Prompt Used:
 ${originalPrompt || 'No prompt available'}
 
-Original Image: ${process.env.PUBLIC_URL || 'http://localhost:3000'}${originalImageUrl}
-Staged Result: ${process.env.PUBLIC_URL || 'http://localhost:3000'}${stagedImageUrl}
+Original Image: ${process.env.PUBLIC_URL || 'https://app.simplestager.com'}${originalImageUrl}
+Staged Result: ${process.env.PUBLIC_URL || 'https://app.simplestager.com'}${stagedImageUrl}
       `
     }
 

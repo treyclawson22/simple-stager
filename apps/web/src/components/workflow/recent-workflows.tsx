@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { prisma } from '@simple-stager/database'
 import { getWorkflowGoalDisplay } from '@simple-stager/shared'
 import { WorkflowDeleteButton } from './workflow-delete-button'
+import { FallbackImage } from '@/components/ui/fallback-image'
 
 interface RecentWorkflowsProps {
   userId: string
@@ -53,16 +54,18 @@ export async function RecentWorkflows({ userId }: RecentWorkflowsProps) {
                 className="flex items-center space-x-4 flex-1"
               >
                 {workflow.results.length > 0 && workflow.results[0].watermarkedUrl ? (
-                  <img
+                  <FallbackImage
                     src={workflow.results[0].watermarkedUrl}
                     alt="Enhanced room"
                     className="h-12 w-12 rounded object-cover"
+                    fallbackText=""
                   />
                 ) : workflow.thumbnailUrl ? (
-                  <img
+                  <FallbackImage
                     src={workflow.thumbnailUrl}
                     alt="Original room"
                     className="h-12 w-12 rounded object-cover"
+                    fallbackText=""
                   />
                 ) : (
                   <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center">

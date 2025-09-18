@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Workflow, Result, User, Plan } from '@simple-stager/database'
 import { getWorkflowGoalDisplay } from '@simple-stager/shared'
 import { WorkflowRenameButton } from './workflow-rename-button'
+import { FallbackImage } from '@/components/ui/fallback-image'
 
 interface WorkflowLayoutProps {
   workflow: Workflow & { results: Result[] }
@@ -139,10 +140,11 @@ export function WorkflowLayout({ workflow, user }: WorkflowLayoutProps) {
         <div>
           <h3 className="text-lg font-medium text-gray-900 mb-4">Original</h3>
           <div className="border rounded-lg overflow-hidden">
-            <img 
+            <FallbackImage 
               src={workflow.sourceImage} 
               alt="Original room"
               className="w-full h-64 object-cover"
+              fallbackText="Original image not available"
             />
           </div>
         </div>
@@ -163,11 +165,12 @@ export function WorkflowLayout({ workflow, user }: WorkflowLayoutProps) {
           
           {workflow.results.length > 0 ? (
             <div className="border rounded-lg overflow-hidden">
-              <img 
+              <FallbackImage 
                 src={workflow.results[0].watermarkedUrl} 
                 alt="Staged room"
                 className="w-full h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
                 onClick={() => handleViewLarge(workflow.results[0].watermarkedUrl)}
+                fallbackText="Staged image not available"
               />
             </div>
           ) : (

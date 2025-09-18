@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation'
 import { FilterSelect } from '@/components/filter-select'
 import { WorkflowDeleteButton } from '@/components/workflow/workflow-delete-button'
 import { WorkflowRenameButton } from '@/components/workflow/workflow-rename-button'
+import { FallbackImage } from '@/components/ui/fallback-image'
 
 interface SearchParams {
   status?: string
@@ -196,16 +197,18 @@ export default async function HistoryPage({
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         {workflow.results.length > 0 && workflow.results[0].watermarkedUrl ? (
-                          <img
+                          <FallbackImage
                             src={workflow.results[0].watermarkedUrl}
                             alt="Staged room"
                             className="h-16 w-16 rounded object-cover"
+                            fallbackText=""
                           />
                         ) : workflow.thumbnailUrl ? (
-                          <img
+                          <FallbackImage
                             src={workflow.thumbnailUrl}
                             alt="Original room"
                             className="h-16 w-16 rounded object-cover"
+                            fallbackText=""
                           />
                         ) : (
                           <div className="h-16 w-16 bg-gray-200 rounded flex items-center justify-center">
