@@ -211,9 +211,12 @@ export default async function HistoryPage({
                             fallbackText=""
                           />
                         ) : (
-                          <div className="h-16 w-16 bg-gray-200 rounded flex items-center justify-center">
-                            <span className="text-xs text-gray-500">IMG</span>
-                          </div>
+                          <FallbackImage
+                            src=""
+                            alt="No image available"
+                            className="h-16 w-16 rounded object-cover"
+                            fallbackText=""
+                          />
                         )}
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">

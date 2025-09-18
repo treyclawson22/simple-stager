@@ -68,9 +68,12 @@ export async function RecentWorkflows({ userId }: RecentWorkflowsProps) {
                     fallbackText=""
                   />
                 ) : (
-                  <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center">
-                    <span className="text-xs text-gray-500">IMG</span>
-                  </div>
+                  <FallbackImage
+                    src=""
+                    alt="No image available"
+                    className="h-12 w-12 rounded object-cover"
+                    fallbackText=""
+                  />
                 )}
                 
                 <div>
