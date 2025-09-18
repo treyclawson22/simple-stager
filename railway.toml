@@ -6,6 +6,11 @@ healthcheckPath = "/api/health"
 healthcheckTimeout = 100
 restartPolicyType = "on_failure"
 
+# Persistent volume for image uploads
+[[volumes]]
+name = "uploads"
+mountPath = "/app/apps/web/public/uploads"
+
 [environments]
 production.PORT = 3000
 production.NODE_ENV = "production"
