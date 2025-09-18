@@ -28,8 +28,7 @@ class R2Storage {
         Key: key,
         Body: buffer,
         ContentType: contentType,
-        // Make publicly readable
-        ACL: 'public-read',
+        // R2 doesn't support ACLs like S3, public access is set at bucket level
       })
 
       await this.client.send(command)

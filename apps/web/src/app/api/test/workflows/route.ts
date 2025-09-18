@@ -132,12 +132,6 @@ export async function POST(request: NextRequest) {
       data: {
         sourceImage: sourceResult.url,
         thumbnailUrl: thumbnailResult.url,
-        // Store cloud storage keys for deletion if needed
-        meta: sourceResult.key || thumbnailResult.key ? JSON.stringify({
-          sourceKey: sourceResult.key,
-          thumbnailKey: thumbnailResult.key,
-          isCloudStorage: sourceResult.isCloudStorage
-        }) : null
       },
     })
 
