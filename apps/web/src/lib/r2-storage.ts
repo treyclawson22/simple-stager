@@ -79,8 +79,8 @@ class R2Storage {
    * Get public URL for a file
    */
   getPublicUrl(key: string): string {
-    // R2 public URL format
-    return `https://${this.bucketName}.${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${key}`
+    // R2 public URL format - based on your bucket info
+    return `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${this.bucketName}/${key}`
   }
 
   /**
