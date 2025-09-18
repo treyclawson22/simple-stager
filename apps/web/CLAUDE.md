@@ -11,6 +11,12 @@
 
 ## Current Configuration
 
+### 🚂 **Railway CLI Access Available**
+**IMPORTANT**: Trey has Railway CLI installed and authenticated
+- Use Railway CLI commands for debugging: `railway logs`, `railway variables`, etc.
+- Can access production environment directly via CLI
+- Preferred method for production debugging and environment management
+
 ### AI Models
 - **Prompt Generation**: Claude Sonnet 4 (`claude-sonnet-4-20250514`)
 - **Image Generation**: Gemini 2.5 Flash Image Preview (`gemini-2.5-flash-preview-image-generation`) - "Nano Banana"

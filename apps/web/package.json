@@ -12,6 +12,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.62.0",
     "@auth/prisma-adapter": "^1.0.0",
+    "@aws-sdk/client-s3": "^3.891.0",
+    "@aws-sdk/s3-request-presigner": "^3.891.0",
     "@hookform/resolvers": "^3.3.0",
     "@simple-stager/database": "*",
     "@simple-stager/shared": "*",

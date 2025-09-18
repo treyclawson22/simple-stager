@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@simple-stager/database'
 import { WorkflowGoal } from '@simple-stager/shared'
 import sharp from 'sharp'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
+import { fileStorage } from '@/lib/file-storage'
 
 export async function GET(request: NextRequest) {
   try {
@@ -97,46 +95,49 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create upload directory if it doesn't exist
-    const uploadDir = join(process.cwd(), 'public/uploads', workflow.id)
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true })
-    }
-
-    // Process and save the image
+    // Process and save the image using cloud storage
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Generate source image path
-    const sourceImagePath = join(uploadDir, 'source.jpg')
-    const publicSourcePath = `/uploads/${workflow.id}/source.jpg`
-
-    // Process image with Sharp
-    await sharp(buffer)
+    // Process source image with Sharp
+    const sourceBuffer = await sharp(buffer)
       .jpeg({ quality: 90 })
       .resize(1024, 1024, { 
         fit: 'inside', 
         withoutEnlargement: true 
       })
-      .toFile(sourceImagePath)
+      .toBuffer()
 
     // Generate thumbnail
-    const thumbnailPath = join(uploadDir, 'thumb.jpg')
-    const publicThumbnailPath = `/uploads/${workflow.id}/thumb.jpg`
-
-    await sharp(buffer)
+    const thumbnailBuffer = await sharp(buffer)
       .jpeg({ quality: 80 })
       .resize(200, 200, { 
         fit: 'cover' 
       })
-      .toFile(thumbnailPath)
+      .toBuffer()
+
+    // Upload both images using cloud storage
+    const [sourceResult, thumbnailResult] = await Promise.all([
+      fileStorage.uploadFile(sourceBuffer, 'source.jpg', workflow.id, 'original'),
+      fileStorage.uploadFile(thumbnailBuffer, 'thumb.jpg', workflow.id, 'thumbnail')
+    ])
+
+    console.log(`📸 Image Upload Results:`)
+    console.log(`  Source: ${sourceResult.url} (${sourceResult.isCloudStorage ? 'R2' : 'Local'})`)
+    console.log(`  Thumbnail: ${thumbnailResult.url} (${thumbnailResult.isCloudStorage ? 'R2' : 'Local'})`)
 
     // Update workflow with file paths
     await prisma.workflow.update({
       where: { id: workflow.id },
       data: {
-        sourceImage: publicSourcePath,
-        thumbnailUrl: publicThumbnailPath,
+        sourceImage: sourceResult.url,
+        thumbnailUrl: thumbnailResult.url,
+        // Store cloud storage keys for deletion if needed
+        meta: sourceResult.key || thumbnailResult.key ? JSON.stringify({
+          sourceKey: sourceResult.key,
+          thumbnailKey: thumbnailResult.key,
+          isCloudStorage: sourceResult.isCloudStorage
+        }) : null
       },
     })
 
