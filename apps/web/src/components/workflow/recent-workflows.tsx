@@ -9,17 +9,21 @@ interface RecentWorkflowsProps {
 }
 
 export async function RecentWorkflows({ userId }: RecentWorkflowsProps) {
-  const workflows = await prisma.workflow.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'desc' },
-    take: 10,
-    include: {
-      results: {
-        take: 1,
-        orderBy: { createdAt: 'desc' },
+  // Get the latest 5 workflows for display, plus count total for "View More" button
+  const [workflows, totalCount] = await Promise.all([
+    prisma.workflow.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      include: {
+        results: {
+          take: 1,
+          orderBy: { createdAt: 'desc' },
+        },
       },
-    },
-  })
+    }),
+    prisma.workflow.count({ where: { userId } })
+  ])
 
   if (workflows.length === 0) {
     return (
@@ -33,97 +37,138 @@ export async function RecentWorkflows({ userId }: RecentWorkflowsProps) {
   }
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <div className="flex justify-between items-center mb-4">
+    <div className="bg-white shadow rounded-lg">
+      <div className="px-6 py-4 border-b border-gray-200">
         <h3 className="text-lg font-medium" style={{ color: '#464646' }}>Recent Staging Projects</h3>
-        <Link
-          href="/history"
-          className="text-sm hover:text-teal-600 transition-colors"
-          style={{ color: '#089AB2' }}
-        >
-          View all
-        </Link>
       </div>
       
-      <div className="space-y-4">
-        {workflows.map((workflow: any) => (
-          <div key={workflow.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-            <div className="flex items-center justify-between">
-              <Link
-                href={workflow.status === 'completed' || workflow.status === 'support_ticket' ? `/workflow/${workflow.id}` : `/dashboard?resume=${workflow.id}`}
-                className="flex items-center space-x-4 flex-1"
-              >
-                {workflow.results.length > 0 && workflow.results[0].watermarkedUrl ? (
-                  <FallbackImage
-                    src={workflow.results[0].watermarkedUrl}
-                    alt="Enhanced room"
-                    className="h-12 w-12 rounded object-cover"
-                    fallbackText=""
-                  />
-                ) : workflow.thumbnailUrl ? (
-                  <FallbackImage
-                    src={workflow.thumbnailUrl}
-                    alt="Original room"
-                    className="h-12 w-12 rounded object-cover"
-                    fallbackText=""
-                  />
-                ) : (
-                  <FallbackImage
-                    src=""
-                    alt="No image available"
-                    className="h-12 w-12 rounded object-cover"
-                    fallbackText=""
-                  />
-                )}
-                
-                <div>
-                  <div className="text-sm font-medium text-gray-900">
-                    {workflow.name || getWorkflowGoalDisplay(workflow.goal)}
+      <div className="overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Project
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Date
+              </th>
+              <th className="relative px-6 py-3">
+                <span className="sr-only">Actions</span>
+              </th>
+              <th className="relative px-6 py-3">
+                <span className="sr-only">Actions</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {workflows.map((workflow: any) => (
+              <tr key={workflow.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    {workflow.results.length > 0 && workflow.results[0].watermarkedUrl ? (
+                      <FallbackImage
+                        src={workflow.results[0].watermarkedUrl}
+                        alt="Staged room"
+                        className="h-16 w-16 rounded object-cover"
+                        fallbackText=""
+                      />
+                    ) : workflow.thumbnailUrl ? (
+                      <FallbackImage
+                        src={workflow.thumbnailUrl}
+                        alt="Original room"
+                        className="h-16 w-16 rounded object-cover"
+                        fallbackText=""
+                      />
+                    ) : (
+                      <FallbackImage
+                        src=""
+                        alt="No image available"
+                        className="h-16 w-16 rounded object-cover"
+                        fallbackText=""
+                      />
+                    )}
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900">
+                        {workflow.name || getWorkflowGoalDisplay(workflow.goal)}
+                      </div>
+                      {workflow.roomType && (
+                        <div className="text-sm text-gray-500">
+                          {workflow.roomType}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  {workflow.roomType && (
-                    <div className="text-sm text-gray-500">{workflow.roomType}</div>
-                  )}
-                  <div className="text-xs text-gray-400">
-                    {new Date(workflow.createdAt).toLocaleDateString()}
-                  </div>
-                </div>
-              </Link>
-              
-              <div className="flex items-center space-x-2">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  workflow.status === 'completed' 
-                    ? 'bg-green-100 text-green-800'
-                    : workflow.status === 'processing'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : workflow.status === 'failed'
-                    ? 'bg-red-100 text-red-800'
-                    : workflow.status === 'ready'
-                    ? 'bg-blue-100 text-blue-800'
-                    : workflow.status === 'support_ticket'
-                    ? 'bg-orange-100 text-orange-800'
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {workflow.status === 'completed' || workflow.status === 'support_ticket' ? 'View' : 'Continue'}
-                </span>
+                </td>
                 
-                {workflow.results.length > 0 && (
-                  <span className="text-xs text-gray-500">
-                    {workflow.results.length} result{workflow.results.length === 1 ? '' : 's'}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    workflow.status === 'completed' 
+                      ? 'bg-green-100 text-green-800'
+                      : workflow.status === 'processing'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : workflow.status === 'failed'
+                      ? 'bg-red-100 text-red-800'
+                      : workflow.status === 'support_ticket'
+                      ? 'bg-orange-100 text-orange-800'
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {workflow.status === 'ready' ? 'Not Complete' : workflow.status === 'support_ticket' ? 'Support Ticket' : workflow.status}
                   </span>
-                )}
-
-                {/* Delete button for non-completed workflows */}
-                {workflow.status !== 'completed' && workflow.status !== 'support_ticket' && (
-                  <WorkflowDeleteButton 
-                    workflowId={workflow.id}
-                    workflowName={workflow.name || getWorkflowGoalDisplay(workflow.goal)}
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
+                  {workflow.status !== 'completed' && workflow.status !== 'support_ticket' && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {workflow.editsUsed} edits used
+                    </div>
+                  )}
+                </td>
+                
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <div>{new Date(workflow.createdAt).toLocaleDateString()}</div>
+                  <div className="text-xs">
+                    {new Date(workflow.createdAt).toLocaleTimeString()}
+                  </div>
+                </td>
+                
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <Link
+                    href={workflow.status === 'ready' ? `/dashboard?resume=${workflow.id}` : `/workflow/${workflow.id}`}
+                    className="font-medium hover:text-teal-600"
+                    style={{ color: '#089AB2' }}
+                  >
+                    {workflow.status === 'ready' ? 'Continue' : 'View'}
+                  </Link>
+                </td>
+                
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  {workflow.status === 'completed' || workflow.status === 'support_ticket' ? (
+                    <span className="text-gray-400 text-xs">•••</span>
+                  ) : (
+                    <WorkflowDeleteButton 
+                      workflowId={workflow.id}
+                      workflowName={workflow.name || getWorkflowGoalDisplay(workflow.goal)}
+                    />
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
+      
+      {/* View More button if there are more than 5 projects */}
+      {totalCount > 5 && (
+        <div className="px-6 py-4 border-t border-gray-200 text-center">
+          <Link
+            href="/history"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white hover:bg-teal-600 transition-colors"
+            style={{ backgroundColor: '#089AB2' }}
+          >
+            View More ({totalCount - 5} more project{totalCount - 5 === 1 ? '' : 's'})
+          </Link>
+        </div>
+      )}
     </div>
   )
 }
