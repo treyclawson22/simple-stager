@@ -7,6 +7,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log('🚀 NEW DOWNLOAD LOGIC: Free re-downloads enabled (v2.0)')
     const user = await requireAuth()
 
     const resolvedParams = await params
