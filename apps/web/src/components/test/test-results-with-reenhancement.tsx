@@ -403,17 +403,6 @@ export function TestResultsWithReenhancement({
             />
           </div>
           
-          {/* Project Name Field */}
-          {projectName && (
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Project Name
-              </label>
-              <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-900 text-sm">
-                {projectName}
-              </div>
-            </div>
-          )}
         </div>
         
         {/* Enhanced Image */}
