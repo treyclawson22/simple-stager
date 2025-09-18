@@ -174,16 +174,50 @@ export function TestResultsWithReenhancement({
     }
 
     if (hasDownloaded) {
-      // Already downloaded, just download the file
-      const link = document.createElement('a')
-      link.href = latestFullResUrl
-      const fileName = localProjectName.trim() 
-        ? `${localProjectName.trim()} - Virtually Staged.jpg`
-        : `Virtually Staged - ${workflowId}.jpg`
-      link.download = fileName
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      // Already downloaded, use download API for file access
+      try {
+        const response = await fetch('/api/workflows/download', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ workflowId }),
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to access downloaded file')
+        }
+
+        // Check if response is a file or JSON error
+        const contentType = response.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'File access failed')
+        }
+
+        // Handle file download
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        // Get filename from response headers or use default
+        const contentDisposition = response.headers.get('content-disposition')
+        const filename = contentDisposition?.match(/filename="([^"]+)"/)?.[1] || 
+          (localProjectName.trim() ? `${localProjectName.trim()} - Virtually Staged.jpg` : `Virtually Staged - ${workflowId}.jpg`)
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+        
+        // Redirect to workflow page after download
+        setTimeout(() => {
+          window.location.href = `/workflow/${workflowId}`
+        }, 1000)
+      } catch (error) {
+        console.error('Download error:', error)
+        alert('Failed to download image. Please try again.')
+      }
       return
     }
 
@@ -203,25 +237,52 @@ export function TestResultsWithReenhancement({
           throw new Error(errorData.error || 'Failed to process download')
         }
 
-        const result = await response.json()
+        // Check if response is a file or JSON
+        const contentType = response.headers.get('content-type')
         
-        // Update credits
-        if (onCreditsUpdate) {
-          onCreditsUpdate(result.creditsRemaining)
+        if (contentType && contentType.includes('application/json')) {
+          // JSON response - credits deducted but file download failed
+          const result = await response.json()
+          
+          // Update credits
+          if (onCreditsUpdate) {
+            onCreditsUpdate(result.creditsRemaining)
+          }
+          
+          setHasDownloaded(true)
+          
+          if (result.error) {
+            throw new Error(result.error)
+          }
+        } else {
+          // File response - download successful
+          setHasDownloaded(true)
+          
+          // Handle file download
+          const blob = await response.blob()
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          // Get filename from response headers or use default
+          const contentDisposition = response.headers.get('content-disposition')
+          const filename = contentDisposition?.match(/filename="([^"]+)"/)?.[1] || 
+            (localProjectName.trim() ? `${localProjectName.trim()} - Virtually Staged.jpg` : `Virtually Staged - ${workflowId}.jpg`)
+          link.download = filename
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          window.URL.revokeObjectURL(url)
+          
+          // Update credits (assume 1 credit deducted for download)
+          if (onCreditsUpdate) {
+            onCreditsUpdate((userCredits || 0) - 1)
+          }
+          
+          // Redirect to workflow page after download
+          setTimeout(() => {
+            window.location.href = `/workflow/${workflowId}`
+          }, 1000)
         }
-        
-        setHasDownloaded(true)
-        
-        // Download the file
-        const link = document.createElement('a')
-        link.href = latestFullResUrl
-        const fileName = localProjectName.trim() 
-          ? `${localProjectName.trim()} - Virtually Staged.jpg`
-          : `Virtually Staged - ${workflowId}.jpg`
-        link.download = fileName
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
       } else {
         // Use test download endpoint
         const response = await fetch('/api/test/workflows/download', {
