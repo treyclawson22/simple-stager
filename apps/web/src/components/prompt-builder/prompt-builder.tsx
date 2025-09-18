@@ -10,6 +10,7 @@ interface PromptBuilderProps {
   workflowId: string
   goal: WorkflowGoal
   onGenerate: () => void
+  projectName?: string
 }
 
 export function PromptBuilder({ workflowId, goal, onGenerate }: PromptBuilderProps) {
@@ -56,6 +57,7 @@ export function PromptBuilder({ workflowId, goal, onGenerate }: PromptBuilderPro
         body: JSON.stringify({
           workflowId,
           prompt,
+          projectName: data.projectName,
         }),
       })
 
