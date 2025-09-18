@@ -109,6 +109,9 @@ export async function POST(request: NextRequest) {
 
       if (isR2Configured()) {
         // Fetch from R2 storage
+        if (!latestResult.fullresUrl) {
+          throw new Error('No full resolution URL found for this result')
+        }
         const response = await fetch(latestResult.fullresUrl)
         if (!response.ok) {
           throw new Error(`Failed to fetch file from R2: ${response.status}`)
@@ -117,6 +120,9 @@ export async function POST(request: NextRequest) {
         fileBuffer = Buffer.from(arrayBuffer)
       } else {
         // Read from local file system
+        if (!latestResult.fullresUrl) {
+          throw new Error('No full resolution URL found for this result')
+        }
         const localPath = latestResult.fullresUrl.replace('/uploads/', '')
         const filePath = join(process.cwd(), 'public/uploads', localPath)
         
@@ -132,7 +138,7 @@ export async function POST(request: NextRequest) {
       const filename = `${workflowName}-enhanced.jpg`
 
       // Return the file with proper download headers
-      return new NextResponse(fileBuffer, {
+      return new NextResponse(fileBuffer.buffer as ArrayBuffer, {
         status: 200,
         headers: {
           'Content-Type': 'image/jpeg',
