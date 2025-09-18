@@ -88,6 +88,9 @@ export async function POST(
           headers: {
             'Content-Type': 'image/jpeg',
             'Content-Disposition': `attachment; filename="simplestager-${result.id}.jpg"`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           },
         })
       } catch (fsError) {
@@ -112,6 +115,9 @@ export async function POST(
       headers: {
         'Content-Type': 'image/jpeg',
         'Content-Disposition': `attachment; filename="simplestager-${result.id}.jpg"`,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       },
     })
 
