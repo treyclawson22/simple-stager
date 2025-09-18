@@ -2,6 +2,78 @@
 
 All notable changes to the Simple Stager project will be documented in this file.
 
+## [1.6.0] - 2025-09-18 - CRITICAL AUTHENTICATION & ENVIRONMENT FIX
+
+### 🚨 CRITICAL PRODUCTION ISSUE RESOLVED - Authentication Working
+
+This release resolves the critical authentication failure on `app.simplestager.com` where users could not sign in due to missing environment variables and NextAuth configuration issues.
+
+### ✅ Fixed - Authentication System
+
+#### **NextAuth Production Configuration**
+- **Issue**: Sign-in attempts with correct passwords would fail silently
+- **Root Cause**: Missing/incorrect environment variables in Railway deployment
+- **Solution**: Comprehensive environment variable configuration via Railway CLI
+- **Result**: Authentication now works properly on production domain
+
+#### **Environment Variables Configured**
+- **Authentication**: `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, Google OAuth credentials
+- **AI APIs**: Anthropic and Gemini API keys for image generation
+- **Stripe Integration**: All live price IDs and secret keys verified from Stripe CLI
+- **Application Settings**: Public URL and upload directory paths
+
+#### **Domain Redirect Fix**
+- **Issue**: NextAuth redirect loop between Railway and app.simplestager.com domains
+- **Solution**: Removed cross-domain redirects causing session conflicts
+- **Files**: `apps/web/src/lib/auth.ts` - Simplified redirect logic for production
+
+### 🔧 Enhanced - Railway Deployment Process
+
+#### **Environment Management**
+- **Tool**: Used Railway CLI to set 20+ environment variables programmatically
+- **Verification**: All Stripe price IDs confirmed via `stripe prices list --live`
+- **Monitoring**: Added logging to track redirect and environment issues
+- **Result**: Eliminated "undefined" environment variables causing startup failures
+
+#### **Production Stability**
+- **Before**: CredentialsSignin errors and missing Stripe configuration
+- **After**: Clean startup logs with all services operational
+- **Health Check**: API responding correctly at `/api/health`
+- **Sign-in**: Users can now authenticate successfully on production
+
+### 📊 Technical Improvements
+
+#### **Stripe Integration Verification**
+- **Live Mode**: Confirmed all subscription and credit pack price IDs match Stripe account
+- **API Keys**: Updated to use live secret keys instead of test mode placeholders
+- **Billing**: Credit packs and subscription plans fully operational
+
+#### **Development Environment**
+- **Local Testing**: Verified localhost:3000 environment remains functional
+- **Hot Reload**: Development server ready for continued feature development
+- **API Consistency**: Both local and production environments now properly configured
+
+### 🎯 User Impact
+
+#### **Authentication Experience**
+- **Before**: Could not sign in on app.simplestager.com (required incognito mode just to view)
+- **After**: Normal sign-in flow works correctly with credentials and Google OAuth
+- **Caching**: Resolved browser cache conflicts causing authentication loops
+- **Domain**: Seamless experience on primary production domain
+
+#### **Production Readiness**
+- **Infrastructure**: All critical environment variables properly configured
+- **Monitoring**: Enhanced logging for debugging authentication issues
+- **Reliability**: Stable production deployment with proper session management
+
+### 📋 Files Modified
+
+- `apps/web/src/lib/auth.ts` - Fixed NextAuth redirect configuration
+- Railway Environment Variables - 20+ variables set via CLI
+- Production deployment fully operational
+
+---
+
 ## [1.5.0] - 2025-09-17 - PRODUCTION IMAGE FIX & URL CORRECTIONS
 
 ### 🖼️ CRITICAL PRODUCTION FIX - Broken Images Resolved
