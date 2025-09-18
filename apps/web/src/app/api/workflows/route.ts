@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/session'
 import { prisma } from '@simple-stager/database'
 import { WorkflowGoal } from '@simple-stager/shared'
 import sharp from 'sharp'
+import { getR2Storage, isR2Configured } from '@/lib/r2-storage'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
@@ -39,39 +40,70 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create upload directory if it doesn't exist
-    const uploadDir = join(process.cwd(), 'public/uploads', workflow.id)
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true })
-    }
-
     // Process and save the image
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Generate source image path
-    const sourceImagePath = join(uploadDir, 'source.jpg')
-    const publicSourcePath = `/uploads/${workflow.id}/source.jpg`
+    let publicSourcePath: string
+    let publicThumbnailPath: string
 
-    // Process image with Sharp
-    await sharp(buffer)
-      .jpeg({ quality: 90 })
-      .resize(1024, 1024, { 
-        fit: 'inside', 
-        withoutEnlargement: true 
-      })
-      .toFile(sourceImagePath)
+    if (isR2Configured()) {
+      // Use R2 cloud storage
+      const r2Storage = getR2Storage()
 
-    // Generate thumbnail
-    const thumbnailPath = join(uploadDir, 'thumb.jpg')
-    const publicThumbnailPath = `/uploads/${workflow.id}/thumb.jpg`
+      // Process source image
+      const sourceBuffer = await sharp(buffer)
+        .jpeg({ quality: 90 })
+        .resize(1024, 1024, { 
+          fit: 'inside', 
+          withoutEnlargement: true 
+        })
+        .toBuffer()
 
-    await sharp(buffer)
-      .jpeg({ quality: 80 })
-      .resize(200, 200, { 
-        fit: 'cover' 
-      })
-      .toFile(thumbnailPath)
+      // Process thumbnail
+      const thumbnailBuffer = await sharp(buffer)
+        .jpeg({ quality: 80 })
+        .resize(200, 200, { 
+          fit: 'cover' 
+        })
+        .toBuffer()
+
+      // Upload to R2
+      const sourceKey = `workflows/${workflow.id}/original/source.jpg`
+      const thumbnailKey = `workflows/${workflow.id}/thumbnail/thumb.jpg`
+
+      publicSourcePath = await r2Storage.uploadFile(sourceKey, sourceBuffer, 'image/jpeg')
+      publicThumbnailPath = await r2Storage.uploadFile(thumbnailKey, thumbnailBuffer, 'image/jpeg')
+
+    } else {
+      // Fallback to local storage (for development)
+      const uploadDir = join(process.cwd(), 'public/uploads', workflow.id)
+      if (!existsSync(uploadDir)) {
+        await mkdir(uploadDir, { recursive: true })
+      }
+
+      const sourceImagePath = join(uploadDir, 'source.jpg')
+      const thumbnailPath = join(uploadDir, 'thumb.jpg')
+      
+      publicSourcePath = `/uploads/${workflow.id}/source.jpg`
+      publicThumbnailPath = `/uploads/${workflow.id}/thumb.jpg`
+
+      // Process and save locally
+      await sharp(buffer)
+        .jpeg({ quality: 90 })
+        .resize(1024, 1024, { 
+          fit: 'inside', 
+          withoutEnlargement: true 
+        })
+        .toFile(sourceImagePath)
+
+      await sharp(buffer)
+        .jpeg({ quality: 80 })
+        .resize(200, 200, { 
+          fit: 'cover' 
+        })
+        .toFile(thumbnailPath)
+    }
 
     // Update workflow with file paths
     await prisma.workflow.update({

@@ -61,9 +61,25 @@ export function WorkflowCreator({ userId, userCredits = 0, onCreditsUpdate, resu
     }
   }, [resumeWorkflowId, router])
 
-  const handleImageUploaded = (id: string) => {
+  const handleImageUploaded = async (id: string) => {
     setWorkflowId(id)
-    setSourceImageUrl(`/uploads/${id}/source.jpg`)
+    
+    // Fetch the actual workflow data to get the correct image URL
+    try {
+      const response = await fetch(`/api/workflows/${id}`)
+      if (response.ok) {
+        const workflow = await response.json()
+        setSourceImageUrl(workflow.sourceImage)
+      } else {
+        // Fallback for development
+        setSourceImageUrl(`/uploads/${id}/source.jpg`)
+      }
+    } catch (error) {
+      console.error('Failed to fetch workflow:', error)
+      // Fallback for development
+      setSourceImageUrl(`/uploads/${id}/source.jpg`)
+    }
+    
     setCurrentStep('configure')
   }
 
