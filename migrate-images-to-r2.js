@@ -8,36 +8,29 @@ const prisma = new PrismaClient()
 // R2 Configuration
 const r2Client = new S3Client({
   region: 'auto',
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  endpoint: 'https://f841420f888f3c8d80e42f02833e5828.r2.cloudflarestorage.com',
   credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+    accessKeyId: 'fc1c4ef1bd0a1699d0968dd39fbda56b',
+    secretAccessKey: '3c7fcbc2128310b4ecd023204c430baf96abf3e453ced4737976725a30720ee7',
   },
 })
 
 async function uploadToR2(buffer, key, contentType = 'image/jpeg') {
   const command = new PutObjectCommand({
-    Bucket: process.env.R2_BUCKET_NAME,
+    Bucket: 'simple-stager-images',
     Key: key,
     Body: buffer,
     ContentType: contentType,
   })
 
   await r2Client.send(command)
-  return `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}/${key}`
+  return `https://f841420f888f3c8d80e42f02833e5828.r2.cloudflarestorage.com/simple-stager-images/${key}`
 }
 
 async function migrateImagesToR2() {
   console.log('🔄 Starting image migration to R2...')
   
-  // Check R2 configuration
-  const requiredVars = ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET_NAME']
-  const missingVars = requiredVars.filter(varName => !process.env[varName])
-  
-  if (missingVars.length > 0) {
-    console.error(`❌ Missing R2 environment variables: ${missingVars.join(', ')}`)
-    return
-  }
+  console.log('✅ R2 credentials hardcoded - ready to migrate!')
 
   // Get all workflows with local image paths
   const workflows = await prisma.workflow.findMany({
