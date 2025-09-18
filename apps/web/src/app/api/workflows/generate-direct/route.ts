@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const user = await requireAuth()
     
     const body = await request.json()
-    const { workflowId, prompt } = body
+    const { workflowId, prompt, projectName } = body
 
     if (!workflowId || !prompt) {
       return NextResponse.json(
@@ -211,6 +211,7 @@ export async function POST(request: NextRequest) {
         data: { 
           status: 'ready',
           previewUrl: watermarkedUrl,
+          ...(projectName && { name: projectName }),
         },
       })
 

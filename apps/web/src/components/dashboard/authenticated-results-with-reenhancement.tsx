@@ -133,12 +133,26 @@ export function AuthenticatedResultsWithReenhancement({
 
     if (hasDownloaded) {
       // Already downloaded, just download the file
-      const link = document.createElement('a')
-      link.href = latestFullResUrl
-      link.download = `${projectName || 'staged-room'}-enhanced.jpg`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      try {
+        const response = await fetch(latestFullResUrl)
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${projectName || 'staged-room'}-enhanced.jpg`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+        
+        // Redirect to workflow page after download
+        setTimeout(() => {
+          window.location.href = `/workflow/${workflowId}`
+        }, 1000)
+      } catch (error) {
+        console.error('Download error:', error)
+        alert('Failed to download image. Please try again.')
+      }
       return
     }
 
@@ -167,12 +181,21 @@ export function AuthenticatedResultsWithReenhancement({
       setHasDownloaded(true)
       
       // Download the file
+      const imageResponse = await fetch(latestFullResUrl)
+      const imageBlob = await imageResponse.blob()
+      const imageUrl = window.URL.createObjectURL(imageBlob)
       const link = document.createElement('a')
-      link.href = latestFullResUrl
+      link.href = imageUrl
       link.download = `${projectName || 'staged-room'}-enhanced.jpg`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+      window.URL.revokeObjectURL(imageUrl)
+      
+      // Redirect to workflow page after download
+      setTimeout(() => {
+        window.location.href = `/workflow/${workflowId}`
+      }, 1000)
       
     } catch (error) {
       console.error('Download error:', error)

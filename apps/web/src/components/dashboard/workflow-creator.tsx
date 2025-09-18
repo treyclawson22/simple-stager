@@ -106,6 +106,7 @@ export function WorkflowCreator({ userId, userCredits = 0, onCreditsUpdate, resu
         body: JSON.stringify({
           workflowId,
           prompt: prompt,
+          projectName: projectName,
         }),
       })
 
