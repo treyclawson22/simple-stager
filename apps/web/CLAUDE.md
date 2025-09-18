@@ -29,6 +29,14 @@ ANTHROPIC_API_KEY=your-anthropic-api-key
 GEMINI_API_KEY=your-gemini-api-key
 ```
 
+### 🔐 Secrets Management
+**IMPORTANT**: All API keys, credentials, and secrets are stored in:
+- **Location**: `.secrets/SIMPLE-STAGER-CREDENTIALS.md` (excluded from Git)
+- **Quick Reference**: `.secrets/QUICK-REFERENCE.md`
+- **Security Guide**: `.secrets/README.md`
+
+**For Claude Code sessions**: Use the Read tool to access these files when needed for development or debugging.
+
 ## Recent Development History
 
 ### 🎉 **LATEST: Session 18 - R2 Cloud Storage Implementation & Production Fix** (September 18, 2025)
