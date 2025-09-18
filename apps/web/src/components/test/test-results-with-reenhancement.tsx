@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { WorkflowGoal } from '@simple-stager/shared'
 import { LoadingSpinnerWithText } from '../ui/loading-spinner'
+import { WorkflowRenameButton } from '../workflow/workflow-rename-button'
 
 interface TestResultsWithReenhancementProps {
   workflowId: string
@@ -386,6 +387,18 @@ export function TestResultsWithReenhancement({
         </div>
       </div>
 
+      {/* Project Name Header */}
+      <div className="flex items-center space-x-3">
+        <h1 className="text-2xl font-bold text-gray-900">
+          {localProjectName || 'Untitled Project'}
+        </h1>
+        <WorkflowRenameButton 
+          workflowId={workflowId} 
+          currentName={localProjectName || ''} 
+        />
+        <span className="text-xs text-gray-400">(edit project name)</span>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Original Image */}
         <div>
@@ -555,21 +568,6 @@ export function TestResultsWithReenhancement({
       </div>
       )}
       
-      {/* Project Name Field */}
-      <div className="mb-4">
-        <label htmlFor="projectName" className="block text-sm font-medium text-gray-700 mb-2">
-          Project Name <span className="text-red-500">*</span>
-        </label>
-        <input
-          id="projectName"
-          type="text"
-          value={localProjectName}
-          onChange={(e) => setLocalProjectName(e.target.value)}
-          placeholder="123 Main Street, Los Angeles, CA"
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-        />
-        <p className="mt-1 text-xs text-gray-500">Required for download</p>
-      </div>
 
       {/* Action buttons */}
       <div className="space-y-4">
