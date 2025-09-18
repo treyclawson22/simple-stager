@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { WorkflowGoal } from '@simple-stager/shared'
 import { LoadingSpinnerWithText } from '../ui/loading-spinner'
-import { WorkflowRenameButton } from '../workflow/workflow-rename-button'
+import { Edit } from 'lucide-react'
 
 interface TestResultsWithReenhancementProps {
   workflowId: string
@@ -41,6 +41,9 @@ export function TestResultsWithReenhancement({
   const [showFeedbackModal, setShowFeedbackModal] = useState(false)
   const [feedbackText, setFeedbackText] = useState('')
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
+  const [showRenameModal, setShowRenameModal] = useState(false)
+  const [newProjectName, setNewProjectName] = useState(localProjectName)
+  const [isRenaming, setIsRenaming] = useState(false)
   
   const MAX_EDITS = 15
   const remainingEdits = MAX_EDITS - editCount
@@ -368,6 +371,40 @@ export function TestResultsWithReenhancement({
     }
   }
 
+  const handleRename = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newProjectName.trim() || newProjectName.trim() === localProjectName) {
+      setShowRenameModal(false)
+      return
+    }
+
+    setIsRenaming(true)
+    
+    try {
+      const response = await fetch(`/api/workflows/${workflowId}/rename`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newProjectName.trim()
+        }),
+      })
+
+      if (response.ok) {
+        setLocalProjectName(newProjectName.trim())
+        setShowRenameModal(false)
+      } else {
+        throw new Error('Failed to rename project')
+      }
+    } catch (error) {
+      console.error('Rename error:', error)
+      alert('Failed to rename project. Please try again.')
+    } finally {
+      setIsRenaming(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Enhancement Complete Notice */}
@@ -392,10 +429,16 @@ export function TestResultsWithReenhancement({
         <h1 className="text-2xl font-bold text-gray-900">
           {localProjectName || 'Untitled Project'}
         </h1>
-        <WorkflowRenameButton 
-          workflowId={workflowId} 
-          currentName={localProjectName || ''} 
-        />
+        <button
+          onClick={() => {
+            setNewProjectName(localProjectName)
+            setShowRenameModal(true)
+          }}
+          className="p-2 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 transition-colors"
+          title="Rename project"
+        >
+          <Edit className="h-4 w-4" />
+        </button>
         <span className="text-xs text-gray-400">(edit project name)</span>
       </div>
 
@@ -721,6 +764,53 @@ export function TestResultsWithReenhancement({
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rename Modal */}
+      {showRenameModal && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowRenameModal(false)}
+        >
+          <div 
+            className="bg-white rounded-lg p-6 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Rename Project
+            </h3>
+            
+            <form onSubmit={handleRename}>
+              <input
+                type="text"
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter project name"
+                maxLength={100}
+                autoFocus
+              />
+              
+              <div className="flex space-x-3 mt-4">
+                <button
+                  type="submit"
+                  disabled={isRenaming || !newProjectName.trim() || newProjectName.trim() === localProjectName}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                >
+                  {isRenaming ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRenameModal(false)}
+                  disabled={isRenaming}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
