@@ -88,25 +88,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     redirect: async ({ url, baseUrl }) => {
+      console.log('Auth redirect:', { url, baseUrl })
+      
       // Handle localhost development redirects (keep on same port)
       if (url.startsWith('http://localhost:3000')) {
         return url.replace('http://localhost:3000', 'http://localhost:3001')
       }
       
-      // Handle production domain redirects
-      if (url.startsWith('https://simple-stager-web-production.up.railway.app')) {
-        return url.replace('https://simple-stager-web-production.up.railway.app', 'https://app.simplestager.com')
-      }
-      
-      // If it's a relative URL, prepend baseUrl
+      // For production, keep the same origin - no cross-domain redirects
+      // This prevents redirect loops between Railway and app.simplestager.com
       if (url.startsWith('/')) {
         return `${baseUrl}${url}`
       }
+      
       // If url is on the same origin, allow
       if (new URL(url).origin === baseUrl) {
         return url
       }
-      // Default to baseUrl
+      
+      // For any external redirects, stay on the current domain
       return baseUrl
     },
     signIn: async ({ user, account }) => {
