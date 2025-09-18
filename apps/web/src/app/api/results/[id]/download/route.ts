@@ -21,6 +21,8 @@ export async function POST(
         workflow: {
           select: {
             userId: true,
+            name: true,
+            id: true,
           },
         },
       },
@@ -84,10 +86,14 @@ export async function POST(
       try {
         const imageBuffer = await fs.readFile(filePath)
         
+        // Generate filename based on project name
+        const workflowName = result.workflow.name || `Staged Room ${result.workflow.id.slice(0, 8)}`
+        const filename = `${workflowName} - Virtually Staged.jpg`
+        
         return new Response(new Uint8Array(imageBuffer), {
           headers: {
             'Content-Type': 'image/jpeg',
-            'Content-Disposition': `attachment; filename="simplestager-${result.id}.jpg"`,
+            'Content-Disposition': `attachment; filename="${filename}"`,
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
             'Expires': '0'
@@ -111,10 +117,14 @@ export async function POST(
 
     const imageBuffer = await imageResponse.arrayBuffer()
 
+    // Generate filename based on project name
+    const workflowName = result.workflow.name || `Staged Room ${result.workflow.id.slice(0, 8)}`
+    const filename = `${workflowName} - Virtually Staged.jpg`
+
     return new Response(imageBuffer, {
       headers: {
         'Content-Type': 'image/jpeg',
-        'Content-Disposition': `attachment; filename="simplestager-${result.id}.jpg"`,
+        'Content-Disposition': `attachment; filename="${filename}"`,
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0'
