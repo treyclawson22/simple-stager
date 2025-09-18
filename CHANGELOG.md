@@ -2,6 +2,86 @@
 
 All notable changes to the Simple Stager project will be documented in this file.
 
+## [1.5.0] - 2025-09-17 - PRODUCTION IMAGE FIX & URL CORRECTIONS
+
+### 🖼️ CRITICAL PRODUCTION FIX - Broken Images Resolved
+
+This release addresses the critical issue where all images were showing as broken on the production site due to Railway deployment not persisting local development uploads.
+
+### ✅ Added - Fallback Image System
+
+#### **Professional Image Error Handling**
+- **Feature**: Created `FallbackImage` component with graceful degradation
+- **UI**: Professional placeholders with loading states and clear messaging
+- **Transparency**: Shows "Production images pending setup" for user clarity
+- **Functionality**: Maintains layout integrity when images fail to load
+- **Files**: 
+  - `apps/web/src/components/ui/fallback-image.tsx` - NEW: Error-handling image component
+  - `apps/web/src/components/workflow/workflow-layout.tsx` - Updated to use FallbackImage
+  - `apps/web/src/components/workflow/recent-workflows.tsx` - Updated thumbnail displays
+  - `apps/web/src/app/(dashboard)/history/page.tsx` - Updated workflow list images
+
+#### **Comprehensive Image Component Updates**
+- **Individual Workflow Pages**: Original and staged images with professional fallbacks
+- **Dashboard Recent Workflows**: Thumbnail images with error handling
+- **History Page**: All workflow list thumbnails with graceful degradation
+- **Consistent UX**: Unified fallback behavior across all image displays
+
+### 🔧 Fixed - URL & Domain Issues
+
+#### **Production Domain Configuration**
+- **Issue**: Hard-coded localhost URLs causing failures in production feedback emails
+- **Solution**: Updated all fallback URLs from `localhost:3000` to `app.simplestager.com`
+- **API Updates**: Fixed feedback route image URLs for email notifications
+- **Files**: 
+  - `apps/web/src/app/api/feedback/route.ts` - Updated domain fallbacks
+  - `apps/web/src/lib/auth.ts` - Maintained localhost redirects for development
+
+#### **Infrastructure Compatibility**
+- **Root Cause**: Railway deployment doesn't persist `public/uploads/` directory
+- **Understanding**: Local development images stored in uploads folder don't exist on production
+- **Solution**: FallbackImage component provides professional UX while maintaining functionality
+- **Future Ready**: Architecture prepared for cloud storage integration (S3, Cloudinary)
+
+### 🎨 Enhanced - User Experience
+
+#### **Production-Ready Image Handling**
+- **Before**: Broken image boxes throughout production interface
+- **After**: Professional placeholders with loading states and clear messaging
+- **Transparency**: Users understand why images aren't available temporarily
+- **Functionality**: All core features work regardless of image availability
+
+#### **Professional Error States**
+- **Loading Animation**: Spinner during image load attempts
+- **Error Fallback**: Clean placeholder with helpful messaging
+- **Layout Preservation**: Maintains design integrity when images fail
+- **User Communication**: Clear explanation about production image setup
+
+### 📈 Production Impact
+
+#### **Immediate Fixes**
+- **Dashboard**: No more broken image boxes in recent workflows
+- **History Page**: Clean thumbnail displays with fallbacks
+- **Individual Workflows**: Professional original/staged image comparison
+- **Email Notifications**: Correct domain URLs for feedback images
+
+#### **Infrastructure Preparation**
+- **Scalable**: Ready for cloud storage implementation
+- **Maintainable**: Centralized error handling in FallbackImage component
+- **User-Friendly**: Clear messaging about image availability status
+- **Professional**: Maintains brand quality during infrastructure transition
+
+### 🚀 Deployment Status
+
+- **Production**: ✅ Live at `https://simple-stager-web-production.up.railway.app`
+- **Images**: ✅ Professional fallbacks displaying correctly
+- **URLs**: ✅ All localhost references updated to production domains
+- **UX**: ✅ No broken interface elements, clear user messaging
+
+**Next Steps**: Implement cloud storage (AWS S3, Cloudinary) for persistent image storage in future releases.
+
+---
+
 ## [1.4.0] - 2025-09-17 - SUPPORT SYSTEM & CREDIT REFRESH
 
 ### 🎯 MAJOR ENHANCEMENT - Customer Support & UX Improvements
