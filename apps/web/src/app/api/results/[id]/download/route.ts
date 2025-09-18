@@ -9,14 +9,6 @@ export async function POST(
   try {
     const user = await requireAuth()
 
-    // Check if user has credits
-    if (user.credits <= 0) {
-      return NextResponse.json(
-        { error: 'Insufficient credits' },
-        { status: 402 }
-      )
-    }
-
     const resolvedParams = await params
     
     // Find the result and verify ownership
@@ -40,33 +32,39 @@ export async function POST(
       )
     }
 
-    // Check if already downloaded
-    if (result.downloaded) {
-      return NextResponse.json(
-        { error: 'Already downloaded' },
-        { status: 409 }
-      )
-    }
+    // Check if this is a first-time download or re-download
+    const isFirstTimeDownload = !result.downloaded
 
-    // Deduct credit and mark as downloaded (transaction)
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: user.id },
-        data: { credits: { decrement: 1 } },
-      }),
-      prisma.creditLedger.create({
-        data: {
-          userId: user.id,
-          delta: -1,
-          reason: 'download',
-          meta: JSON.stringify({ resultId: result.id }),
-        },
-      }),
-      prisma.result.update({
-        where: { id: resolvedParams.id },
-        data: { downloaded: true },
-      }),
-    ])
+    // Only check credits and charge for first-time downloads
+    if (isFirstTimeDownload) {
+      // Check if user has credits for first-time download
+      if (user.credits <= 0) {
+        return NextResponse.json(
+          { error: 'Insufficient credits' },
+          { status: 402 }
+        )
+      }
+      // Deduct credit and mark as downloaded (transaction)
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: user.id },
+          data: { credits: { decrement: 1 } },
+        }),
+        prisma.creditLedger.create({
+          data: {
+            userId: user.id,
+            delta: -1,
+            reason: 'download',
+            meta: JSON.stringify({ resultId: result.id }),
+          },
+        }),
+        prisma.result.update({
+          where: { id: resolvedParams.id },
+          data: { downloaded: true },
+        }),
+      ])
+    }
+    // For re-downloads, skip credit deduction - user already paid
 
     // Get the full resolution image without watermark
     if (!result.fullresUrl) {
