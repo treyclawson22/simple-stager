@@ -17,11 +17,6 @@ export function WorkflowLayout({ workflow, user }: WorkflowLayoutProps) {
   const [selectedImageUrl, setSelectedImageUrl] = useState('')
 
   const handleDownload = async (resultId: string) => {
-    if (user.credits <= 0) {
-      alert('You need credits to download. Please upgrade your plan.')
-      return
-    }
-
     setIsDownloading(true)
     
     try {
@@ -30,7 +25,10 @@ export function WorkflowLayout({ workflow, user }: WorkflowLayoutProps) {
       })
 
       if (!response.ok) {
-        throw new Error('Download failed')
+        // Backend will handle credit checks and return appropriate error
+        const errorData = await response.json()
+        alert(errorData.error || 'Download failed')
+        return
       }
 
       const blob = await response.blob()
