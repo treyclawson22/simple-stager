@@ -42,7 +42,11 @@ export function FallbackImage({
             <p className="text-xs text-gray-400 mt-1">R2 cloud storage loading...</p>
           )}
           {isLocalImage && (
-            <p className="text-xs text-gray-400 mt-1">Local image not found</p>
+            <p className="text-xs text-gray-400 mt-1">
+              {process.env.NODE_ENV === 'production' 
+                ? 'Image migrating to cloud storage' 
+                : 'Local image not found'}
+            </p>
           )}
         </div>
       </div>
