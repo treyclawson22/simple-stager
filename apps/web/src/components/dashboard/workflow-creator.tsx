@@ -178,7 +178,7 @@ export function WorkflowCreator({ userId, userCredits = 0, onCreditsUpdate, resu
 
   return (
     <div className="space-y-6">
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="bg-white shadow rounded-lg p-6 relative">
         <div className="mb-6">
           <h2 className="text-lg font-medium" style={{ color: '#464646' }}>Advanced AI Room Staging</h2>
           <p className="mt-1 text-sm" style={{ color: '#6B7280' }}>
@@ -186,7 +186,30 @@ export function WorkflowCreator({ userId, userCredits = 0, onCreditsUpdate, resu
           </p>
         </div>
 
-        <div className="space-y-6">
+        {/* No Credits Overlay */}
+        {userCredits <= 0 && (
+          <div className="absolute inset-0 bg-gray-100 bg-opacity-90 rounded-lg flex items-center justify-center z-10">
+            <div className="text-center p-8 max-w-md">
+              <div className="mb-4">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Credits Required</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                You need credits to use Advanced AI Room Staging. Purchase a plan or credit pack to start creating beautiful staged photos.
+              </p>
+              <a
+                href="/billing"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+              >
+                Purchase Credits
+              </a>
+            </div>
+          </div>
+        )}
+
+        <div className={`space-y-6 ${userCredits <= 0 ? 'opacity-30 pointer-events-none' : ''}`}>
           {/* Step indicator */}
           <div className="flex items-center space-x-4">
             <div className={`flex items-center`} style={{ 
