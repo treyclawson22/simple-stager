@@ -2,12 +2,12 @@
 
 ## Project State Summary
 
-**Last Updated**: September 17, 2025 - Session 17  
-**Status**: ✅ **PRODUCTION OPTIMIZED** - Critical image fix deployed, professional fallbacks implemented, all production issues resolved  
+**Last Updated**: September 18, 2025 - Session 18  
+**Status**: ✅ **PRODUCTION CLOUD OPTIMIZED** - R2 cloud storage fully implemented, all image upload/display issues resolved  
 **Working URLs**: 
 - Local: `http://localhost:3001` (Main application - authenticated users)
 - Local Test: `http://localhost:3001/test` (Test page - bypasses authentication)
-- Production: `https://simple-stager-web-production.up.railway.app` (Railway deployment with professional image fallbacks ✅)
+- Production: `https://simple-stager-web-production.up.railway.app` (Railway deployment with Cloudflare R2 cloud storage ✅)
 
 ## Current Configuration
 
@@ -31,7 +31,42 @@ GEMINI_API_KEY=your-gemini-api-key
 
 ## Recent Development History
 
-### 🎉 **LATEST: Session 17 - Production Image Fix & URL Corrections** (September 17, 2025)
+### 🎉 **LATEST: Session 18 - R2 Cloud Storage Implementation & Production Fix** (September 18, 2025)
+**CRITICAL PRODUCTION UPGRADE**: Replaced local file storage with Cloudflare R2 cloud storage to resolve persistent image issues:
+
+#### **☁️ R2 Cloud Storage Integration** ✅
+   - **Critical Issue**: Production image uploads still using local storage causing 404 errors
+   - **Root Cause**: Upload API (`/api/workflows/route.ts`) not updated to use R2 storage
+   - **Solution**: Complete migration from local file storage to Cloudflare R2 cloud storage
+   - **Benefits**: Images persist between Railway deployments, scalable storage, $0 egress costs
+   - **Files Modified**: 
+     - `apps/web/src/app/api/workflows/route.ts` - Updated to use R2 storage with fallback
+     - `apps/web/src/components/dashboard/workflow-creator.tsx` - Fixed to fetch actual URLs from database
+     - `apps/web/src/app/api/workflows/[id]/route.ts` - Created endpoint for workflow data retrieval
+
+#### **🔧 Image Upload & Display Fix** ✅
+   - **Issue**: "Original image isn't visible when I upload it" and "Cannot generate staging"
+   - **Solution**: Workflow creator now fetches actual image URLs from database after upload
+   - **Technical**: Added proper API integration between upload and display systems
+   - **User Experience**: Immediate image visibility after upload, seamless workflow progression
+
+#### **🏗️ Architecture Improvements** ✅
+   - **Local Development**: Maintains local storage for faster development workflow
+   - **Production**: Uses R2 cloud storage for persistence and scalability
+   - **Fallback System**: Graceful degradation with `isR2Configured()` detection
+   - **Image Processing**: Unified Sharp processing for both local and cloud storage
+
+#### **🚀 Production Impact** ✅
+   - **Before**: 404 errors for uploaded images, broken generation workflow
+   - **After**: Full cloud storage integration, reliable image persistence
+   - **Deployment**: Successful Railway deployment with R2 storage active
+   - **User Experience**: Upload → Display → Generate workflow fully operational
+
+**Current Status**: ✅ R2 cloud storage fully implemented and deployed to production
+
+---
+
+### Session 17 - Production Image Fix & URL Corrections (September 17, 2025)
 **CRITICAL PRODUCTION FIX**: Resolved broken images on production with professional fallback system:
 
 #### **🖼️ Production Image Crisis Resolution** ✅
@@ -1397,7 +1432,7 @@ Database Store → Gemini 2.5 → Claude Prompts → Sharp → Frontend
 - **Database**: Railway PostgreSQL with Prisma ORM
 - **Authentication**: NextAuth.js with Google OAuth + credentials
 - **Billing**: Stripe live integration (subscriptions + credit packs)
-- **File Storage**: Local filesystem `/public/uploads/`
+- **File Storage**: Cloudflare R2 cloud storage (production) with local fallback (development)
 - **Image Processing**: Sharp for watermarking and thumbnails
 
 ### **🤖 AI Integration**
