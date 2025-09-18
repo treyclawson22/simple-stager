@@ -134,8 +134,8 @@ export async function POST(request: NextRequest) {
       }
 
       // Get workflow name for filename
-      const workflowName = workflow.name || `staged-room-${workflowId.slice(0, 8)}`
-      const filename = `${workflowName}-enhanced.jpg`
+      const workflowName = workflow.name || `Staged Room ${workflowId.slice(0, 8)}`
+      const filename = `${workflowName} - Virtually Staged.jpg`
 
       // Return the file with proper download headers
       return new NextResponse(fileBuffer.buffer as ArrayBuffer, {

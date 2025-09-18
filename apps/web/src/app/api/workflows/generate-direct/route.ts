@@ -16,6 +16,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { workflowId, prompt, projectName } = body
 
+    console.log('Generate-direct called with:', { workflowId, promptLength: prompt?.length, projectName })
+
     if (!workflowId || !prompt) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -206,13 +208,16 @@ export async function POST(request: NextRequest) {
       })
 
       // Update workflow status - keep as 'ready' to allow download
+      const updateData = { 
+        status: 'ready',
+        previewUrl: watermarkedUrl,
+        ...(projectName && { name: projectName }),
+      }
+      console.log('Updating workflow with data:', updateData)
+      
       await prisma.workflow.update({
         where: { id: workflowId },
-        data: { 
-          status: 'ready',
-          previewUrl: watermarkedUrl,
-          ...(projectName && { name: projectName }),
-        },
+        data: updateData,
       })
 
       // Don't deduct credits on generation - only on download like test system
