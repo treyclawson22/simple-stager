@@ -3,9 +3,11 @@ import { requireAuth } from '@/lib/session'
 import { prisma } from '@simple-stager/database'
 import { generateImage } from '@/lib/nano-banana'
 import { addWatermark, createThumbnail } from '@/lib/watermark'
+import { getR2Storage, isR2Configured } from '@/lib/r2-storage'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
+import sharp from 'sharp'
 
 export async function POST(request: NextRequest) {
   try {
@@ -96,27 +98,102 @@ export async function POST(request: NextRequest) {
       if (imageBuffer.byteLength === 0) {
         throw new Error('Generated image is empty')
       }
-      
-      // Create workflow directory
-      const workflowDir = join(process.cwd(), 'public/uploads', workflowId)
-      if (!existsSync(workflowDir)) {
-        await mkdir(workflowDir, { recursive: true })
+
+      let originalUrl: string
+      let watermarkedUrl: string
+
+      if (isR2Configured()) {
+        // Use R2 cloud storage
+        const r2Storage = getR2Storage()
+
+        // Process original image
+        const originalBuffer = await sharp(imageBuffer)
+          .jpeg({ quality: 95 })
+          .toBuffer()
+
+        // Create watermark using Sharp directly (no file paths needed)
+        const metadata = await sharp(imageBuffer).metadata()
+        const width = metadata.width || 1024
+        const height = metadata.height || 1024
+        const fontSize = Math.max(20, Math.floor(width * 0.02))
+        const diagonalLength = Math.sqrt(width * width + height * height)
+        const textSpacing = Math.max(200, Math.floor(diagonalLength / 8))
+        
+        const watermarkSvg = `
+          <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="watermarkPattern" x="0" y="0" width="${textSpacing}" height="${textSpacing}" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+                <text 
+                  x="50%" 
+                  y="50%" 
+                  text-anchor="middle" 
+                  dominant-baseline="middle" 
+                  fill="rgba(255,255,255,0.15)" 
+                  font-family="Arial, sans-serif" 
+                  font-size="${fontSize}" 
+                  font-weight="bold"
+                >Simple Stager</text>
+              </pattern>
+              <pattern id="linePattern" x="0" y="0" width="${textSpacing * 0.3}" height="${textSpacing * 0.3}" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+                <line x1="0" y1="50%" x2="100%" y2="50%" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+              </pattern>
+            </defs>
+            <rect x="0" y="0" width="100%" height="100%" fill="url(#linePattern)"/>
+            <rect x="0" y="0" width="100%" height="100%" fill="url(#watermarkPattern)"/>
+          </svg>
+        `
+
+        // Create watermarked version
+        const watermarkedBuffer = await sharp(imageBuffer)
+          .composite([{
+            input: Buffer.from(watermarkSvg),
+            top: 0,
+            left: 0,
+            blend: 'over'
+          }])
+          .jpeg({ quality: 90 })
+          .toBuffer()
+
+        // Create thumbnail
+        const thumbnailBuffer = await sharp(watermarkedBuffer)
+          .resize(200, 200, { 
+            fit: 'cover',
+            position: 'center'
+          })
+          .jpeg({ quality: 80 })
+          .toBuffer()
+
+        // Upload to R2
+        const originalKey = `workflows/${workflowId}/staged/generated.jpg`
+        const watermarkedKey = `workflows/${workflowId}/staged/watermarked.jpg`
+        const thumbnailKey = `workflows/${workflowId}/staged/thumb.jpg`
+
+        originalUrl = await r2Storage.uploadFile(originalKey, originalBuffer, 'image/jpeg')
+        watermarkedUrl = await r2Storage.uploadFile(watermarkedKey, watermarkedBuffer, 'image/jpeg')
+        await r2Storage.uploadFile(thumbnailKey, thumbnailBuffer, 'image/jpeg')
+
+      } else {
+        // Fallback to local storage (for development)
+        const workflowDir = join(process.cwd(), 'public/uploads', workflowId)
+        if (!existsSync(workflowDir)) {
+          await mkdir(workflowDir, { recursive: true })
+        }
+
+        // Save the original generated image
+        const originalPath = join(workflowDir, 'generated.jpg')
+        await writeFile(originalPath, Buffer.from(imageBuffer))
+
+        // Create watermarked version
+        const watermarkedPath = join(workflowDir, 'watermarked.jpg')
+        await addWatermark(originalPath, watermarkedPath)
+
+        // Create thumbnail
+        const thumbnailPath = join(workflowDir, 'generated_thumb.jpg')
+        await createThumbnail(watermarkedPath, 200)
+
+        originalUrl = `/uploads/${workflowId}/generated.jpg`
+        watermarkedUrl = `/uploads/${workflowId}/watermarked.jpg`
       }
-
-      // Save the original generated image
-      const originalPath = join(workflowDir, 'generated.jpg')
-      await writeFile(originalPath, Buffer.from(imageBuffer))
-
-      // Create watermarked version
-      const watermarkedPath = join(workflowDir, 'watermarked.jpg')
-      await addWatermark(originalPath, watermarkedPath)
-
-      // Create thumbnail
-      const thumbnailPath = join(workflowDir, 'generated_thumb.jpg')
-      await createThumbnail(watermarkedPath, 200)
-
-      const originalUrl = `/uploads/${workflowId}/generated.jpg`
-      const watermarkedUrl = `/uploads/${workflowId}/watermarked.jpg`
 
       // Create result record
       const dbResult = await prisma.result.create({

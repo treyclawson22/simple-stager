@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { WorkflowGoal } from '@simple-stager/shared'
 import { LoadingSpinnerWithText } from '../ui/loading-spinner'
 
@@ -29,8 +29,8 @@ export function AuthenticatedResultsWithReenhancement({
   const [reenhancementPrompt, setReenhancementPrompt] = useState('')
   const [isReenhancing, setIsReenhancing] = useState(false)
   const [reenhancedImageUrl, setReenhancedImageUrl] = useState<string>('')
-  const [currentImageUrl, setCurrentImageUrl] = useState(`/uploads/${workflowId}/watermarked.jpg`)
-  const [latestFullResUrl, setLatestFullResUrl] = useState(`/uploads/${workflowId}/generated.jpg`)
+  const [currentImageUrl, setCurrentImageUrl] = useState('')
+  const [latestFullResUrl, setLatestFullResUrl] = useState('')
   const [showLargeImage, setShowLargeImage] = useState(false)
   const [editCount, setEditCount] = useState(0)
   const [hasDownloaded, setHasDownloaded] = useState(false)
@@ -43,6 +43,32 @@ export function AuthenticatedResultsWithReenhancement({
   const editsExhausted = editCount >= MAX_EDITS
   const DOWNLOAD_COST = 1
   const hasInsufficientCredits = userCredits < DOWNLOAD_COST
+
+  // Fetch actual URLs from database
+  useEffect(() => {
+    const fetchWorkflowData = async () => {
+      try {
+        const response = await fetch(`/api/workflows/${workflowId}`)
+        if (response.ok) {
+          const workflow = await response.json()
+          if (workflow.results && workflow.results.length > 0) {
+            const latestResult = workflow.results[workflow.results.length - 1]
+            setCurrentImageUrl(latestResult.watermarkedUrl)
+            setLatestFullResUrl(latestResult.fullresUrl)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch workflow data:', error)
+        // Fallback to old URLs if fetch fails
+        setCurrentImageUrl(`/uploads/${workflowId}/watermarked.jpg`)
+        setLatestFullResUrl(`/uploads/${workflowId}/generated.jpg`)
+      }
+    }
+
+    if (workflowId) {
+      fetchWorkflowData()
+    }
+  }, [workflowId])
 
   const handleReenhancement = async () => {
     if (!reenhancementPrompt.trim()) return
@@ -70,14 +96,23 @@ export function AuthenticatedResultsWithReenhancement({
 
       const result = await response.json()
       
-      // Update the displayed image
-      const timestamp = Date.now()
-      const newImageUrl = `/uploads/${workflowId}/watermarked.jpg?t=${timestamp}`
-      const newFullResUrl = `/uploads/${workflowId}/reenhanced.jpg`
+      // Fetch fresh URLs from database after reenhancement
+      try {
+        const workflowResponse = await fetch(`/api/workflows/${workflowId}`)
+        if (workflowResponse.ok) {
+          const workflow = await workflowResponse.json()
+          if (workflow.results && workflow.results.length > 0) {
+            const latestResult = workflow.results[workflow.results.length - 1]
+            const newImageUrl = latestResult.watermarkedUrl + `?t=${Date.now()}`
+            setCurrentImageUrl(newImageUrl)
+            setLatestFullResUrl(latestResult.fullresUrl)
+            setReenhancedImageUrl(newImageUrl)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch updated URLs:', error)
+      }
       
-      setCurrentImageUrl(newImageUrl)
-      setLatestFullResUrl(newFullResUrl)
-      setReenhancedImageUrl(newImageUrl)
       setEditCount(prev => prev + 1)
       setShowReenhancementForm(false)
       setReenhancementPrompt('')
