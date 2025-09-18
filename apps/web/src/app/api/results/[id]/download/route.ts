@@ -64,7 +64,7 @@ export async function POST(
         }),
       ])
     }
-    // For re-downloads, skip credit deduction - user already paid
+    // For re-downloads, skip credit deduction - user already paid for this download
 
     // Get the full resolution image without watermark
     if (!result.fullresUrl) {
