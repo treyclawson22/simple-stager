@@ -324,8 +324,8 @@ export function WorkflowCreator({ userId, userCredits = 0, onCreditsUpdate, resu
                   )}
                 </div>
                 
-                {/* Project Name - Always visible when we have an image */}
-                {sourceImageUrl && (
+                {/* Project Name - Visible during configure step, header during results */}
+                {sourceImageUrl && currentStep !== 'results' && (
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Project Name <span className="text-red-500">*</span>
@@ -338,6 +338,39 @@ export function WorkflowCreator({ userId, userCredits = 0, onCreditsUpdate, resu
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                       required
                     />
+                  </div>
+                )}
+                
+                {/* Project Name Header - Visible during results step */}
+                {sourceImageUrl && currentStep === 'results' && (
+                  <div className="mt-4">
+                    <div className="flex items-center space-x-3">
+                      <h2 className="text-xl font-bold text-gray-900">
+                        {projectName || 'Untitled Project'}
+                      </h2>
+                      <button
+                        onClick={() => {
+                          // We'll handle project name editing here
+                          const newName = prompt('Enter new project name:', projectName)
+                          if (newName && newName.trim() && newName.trim() !== projectName) {
+                            setProjectName(newName.trim())
+                            // Also update it in the database
+                            fetch(`/api/workflows/${workflowId}/rename`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ name: newName.trim() }),
+                            }).catch(console.error)
+                          }
+                        }}
+                        className="p-2 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 transition-colors"
+                        title="Rename project"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <span className="text-xs text-gray-400">(edit project name)</span>
+                    </div>
                   </div>
                 )}
               </div>
