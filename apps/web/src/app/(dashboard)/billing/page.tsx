@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { InteractivePlans } from '@/components/billing/interactive-plans'
 import { ReferralBanner } from '@/components/billing/referral-banner'
 import { CreditPackPurchase } from '@/components/billing/credit-pack-purchase'
+import { SubscriptionManagement } from '@/components/billing/subscription-management'
 import { BillingClient } from '@/components/billing/billing-client'
 import { getWorkflowGoalDisplay } from '@simple-stager/shared'
 
@@ -199,6 +200,9 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
             
             <CreditPackPurchase />
           </div>
+
+          {/* Subscription Management */}
+          <SubscriptionManagement user={user} />
 
         </div>
       </div>
