@@ -155,10 +155,19 @@ export async function POST(request: NextRequest) {
             // Finalize the invoice (this locks in the invoice items)
             const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id)
             
-            // Explicitly attempt payment
+            // Explicitly attempt payment using the subscription's default payment method
             let paidInvoice
             try {
-              paidInvoice = await stripe.invoices.pay(finalizedInvoice.id)
+              // Get the payment method from the subscription
+              const paymentMethodId = subscription.default_payment_method as string
+              
+              if (!paymentMethodId) {
+                throw new Error('No payment method found on subscription')
+              }
+              
+              paidInvoice = await stripe.invoices.pay(finalizedInvoice.id, {
+                payment_method: paymentMethodId
+              })
               console.log(`✅ Created upgrade invoice ${invoice.id} for $${priceDifference}`)
               console.log(`💳 Invoice payment status: ${paidInvoice.status}`)
               console.log(`💳 Invoice amount paid: $${(paidInvoice.amount_paid || 0) / 100}`)
