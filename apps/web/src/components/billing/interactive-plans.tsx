@@ -329,7 +329,7 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
                       ? 'bg-green-100 text-green-800'
                       : 'bg-teal-100 text-teal-800'
                   }`}>
-                    {isFreePlan ? 'Free Plan' : isPendingDowngrade ? 'Current (until next cycle)' : 'Current'}
+                    {isFreePlan ? 'Free Plan' : isPendingDowngrade ? <>Current<br />(until next cycle)</> : 'Current'}
                   </span>
                 )}
                 {plan.name === pendingPlanName && isPendingDowngrade && (
