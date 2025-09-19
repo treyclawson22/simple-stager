@@ -172,6 +172,18 @@ export async function POST(request: NextRequest) {
           if (priceDifference <= 0) {
             console.log(`⚠️ Downgrade detected: price difference is $${priceDifference}`)
             
+            // If user already has a pending downgrade, cancel the existing schedule first
+            if (existingPlan.status === 'pending_downgrade' && existingPlan.stripeScheduleId) {
+              console.log(`🗓️ Canceling existing downgrade schedule ${existingPlan.stripeScheduleId}`)
+              try {
+                await stripe.subscriptionSchedules.cancel(existingPlan.stripeScheduleId)
+                console.log(`✅ Canceled existing schedule ${existingPlan.stripeScheduleId}`)
+              } catch (error) {
+                console.error(`❌ Failed to cancel existing schedule: ${error}`)
+                // Continue anyway - create new schedule
+              }
+            }
+            
             // For downgrades, use Stripe Schedule API to automatically change plan at next billing cycle
             const subscription = await stripe.subscriptions.retrieve(existingPlan.stripeSubscriptionId)
             
