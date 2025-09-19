@@ -131,17 +131,17 @@ export async function POST(request: NextRequest) {
         
         await writeFile(tempOriginal, originalBuffer)
         await addWatermark(tempOriginal, tempWatermarked)
-        watermarkedBuffer = await fs.readFile(tempWatermarked)
+        watermarkedBuffer = await fs.promises.readFile(tempWatermarked)
         
         // Clean up temp files
-        await fs.unlink(tempOriginal).catch(() => {})
-        await fs.unlink(tempWatermarked).catch(() => {})
+        await fs.promises.unlink(tempOriginal).catch(() => {})
+        await fs.promises.unlink(tempWatermarked).catch(() => {})
       } else {
         // For local storage, create watermarked version normally
         const localPath = join(process.cwd(), 'apps/web/public', reenhancedStorage.url)
         const watermarkedPath = localPath.replace('reenhanced.jpg', 'watermarked.jpg')
         await addWatermark(localPath, watermarkedPath)
-        watermarkedBuffer = await fs.readFile(watermarkedPath)
+        watermarkedBuffer = await fs.promises.readFile(watermarkedPath)
       }
 
       // Upload watermarked version to storage
