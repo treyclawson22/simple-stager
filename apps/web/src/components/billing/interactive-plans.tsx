@@ -274,7 +274,7 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
                     isFreePlan 
                       ? 'bg-purple-100 text-purple-800' 
                       : isPendingDowngrade
-                      ? 'bg-orange-100 text-orange-800'
+                      ? 'bg-green-100 text-green-800'
                       : 'bg-teal-100 text-teal-800'
                   }`}>
                     {isFreePlan ? 'Free Plan' : isPendingDowngrade ? 'Current (until next cycle)' : 'Current'}
