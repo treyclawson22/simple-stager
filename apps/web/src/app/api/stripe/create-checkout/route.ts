@@ -101,16 +101,6 @@ export async function POST(request: NextRequest) {
           console.log(`🔄 Canceling downgrade for subscription ${existingPlan.stripeSubscriptionId}`)
           
           try {
-            // If there's a Stripe schedule, cancel it
-            if (existingPlan.stripeScheduleId) {
-              console.log(`🗓️ Canceling Stripe schedule ${existingPlan.stripeScheduleId}`)
-              
-              // Cancel the subscription schedule and release the subscription
-              await stripe.subscriptionSchedules.cancel(existingPlan.stripeScheduleId)
-              
-              console.log(`✅ Canceled Stripe schedule ${existingPlan.stripeScheduleId}`)
-            }
-            
             // Get the subscription and current plan info
             const subscription = await stripe.subscriptions.retrieve(existingPlan.stripeSubscriptionId)
             const currentPlan = SUBSCRIPTION_PLANS[existingPlan.name as keyof typeof SUBSCRIPTION_PLANS]
@@ -136,7 +126,6 @@ export async function POST(request: NextRequest) {
               data: {
                 status: 'active',
                 pendingPlan: null, // Clear pending downgrade
-                stripeScheduleId: null, // Clear schedule ID
               }
             })
             
@@ -172,16 +161,9 @@ export async function POST(request: NextRequest) {
           if (priceDifference <= 0) {
             console.log(`⚠️ Downgrade detected: price difference is $${priceDifference}`)
             
-            // If user already has a pending downgrade, cancel the existing schedule first
-            if (existingPlan.status === 'pending_downgrade' && existingPlan.stripeScheduleId) {
-              console.log(`🗓️ Canceling existing downgrade schedule ${existingPlan.stripeScheduleId}`)
-              try {
-                await stripe.subscriptionSchedules.cancel(existingPlan.stripeScheduleId)
-                console.log(`✅ Canceled existing schedule ${existingPlan.stripeScheduleId}`)
-              } catch (error) {
-                console.error(`❌ Failed to cancel existing schedule: ${error}`)
-                // Continue anyway - create new schedule
-              }
+            // If user already has a pending downgrade, we'll overwrite it with the new target plan
+            if (existingPlan.status === 'pending_downgrade') {
+              console.log(`🔄 User already has pending downgrade, updating to new target plan: ${planId}`)
             }
             
             // For downgrades, use Stripe Schedule API to automatically change plan at next billing cycle
@@ -191,60 +173,23 @@ export async function POST(request: NextRequest) {
             const nextBillingDate = new Date(subscription.current_period_end * 1000)
             console.log(`📅 Scheduling downgrade for next billing cycle: ${nextBillingDate.toISOString()}`)
             
-            // Create subscription schedule to change plan at next billing cycle
-            const schedule = await stripe.subscriptionSchedules.create({
-              from_subscription: existingPlan.stripeSubscriptionId,
-              phases: [
-                {
-                  // Current phase - keep existing plan until end of current billing period
-                  items: [{
-                    price: currentPlan.stripePriceId,
-                    quantity: 1,
-                  }],
-                  start_date: subscription.current_period_start,
-                  end_date: subscription.current_period_end,
-                  metadata: {
-                    phase: 'current',
-                    planName: existingPlan.name
-                  }
-                },
-                {
-                  // New phase - switch to downgraded plan at next billing cycle
-                  items: [{
-                    price: plan.stripePriceId,
-                    quantity: 1,
-                  }],
-                  start_date: subscription.current_period_end,
-                  metadata: {
-                    phase: 'downgraded',
-                    planName: planId,
-                    userId: user.id,
-                    credits: plan.credits.toString(),
-                  }
-                }
-              ],
-              metadata: {
-                userId: user.id,
-                downgradeTo: planId,
-                downgradeFrom: existingPlan.name,
-                scheduledDowngrade: 'true'
-              }
-            })
-            
-            console.log(`✅ Created subscription schedule ${schedule.id} for downgrade`)
-            
-            // Update metadata on the original subscription for tracking
+            // For downgrades, DON'T change subscription price immediately to prevent credit arbitrage
+            // Only update metadata to schedule the downgrade for next billing cycle
+            // We'll handle the actual plan change via webhooks at next billing cycle
             await stripe.subscriptions.update(existingPlan.stripeSubscriptionId, {
               metadata: {
                 userId: user.id,
-                planId: existingPlan.name, // Keep current plan ID
+                planId: existingPlan.name, // Keep current plan ID  
                 credits: currentPlan.credits.toString(),
                 pendingDowngrade: 'true',
-                scheduleId: schedule.id, // Track the schedule
-                downgradeToPlan: planId // Track target plan
+                downgradeToPlan: planId, // Track target plan
+                downgradeToPrice: plan.stripePriceId, // Track target price
+                downgradeScheduledAt: Date.now().toString() // Track when scheduled
               },
               proration_behavior: 'none',
             })
+            
+            console.log(`✅ Scheduled downgrade in metadata for subscription ${existingPlan.stripeSubscriptionId}`)
             
             // Update our database to show pending downgrade (keep current plan name)
             await prisma.plan.update({
@@ -253,7 +198,6 @@ export async function POST(request: NextRequest) {
                 // Keep current plan name to show "Current (until next cycle)"
                 status: 'pending_downgrade',
                 pendingPlan: planId, // Store the plan they'll downgrade to
-                stripeScheduleId: schedule.id, // Store schedule ID for cancellation
               }
             })
             
