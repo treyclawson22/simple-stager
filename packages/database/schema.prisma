@@ -35,8 +35,9 @@ model Plan {
   id                   String    @id @default(cuid())
   userId               String
   name                 String    // entry | showcase | prime | prestige | portfolio
+  pendingPlan          String?   // For downgrades: the plan that will activate next billing cycle
   stripeSubscriptionId String?   @unique
-  status               String?   // active | canceled | past_due | etc.
+  status               String?   // active | canceled | past_due | pending_downgrade | etc.
   currentPeriodStart   DateTime?
   currentPeriodEnd     DateTime?
   createdAt            DateTime  @default(now())

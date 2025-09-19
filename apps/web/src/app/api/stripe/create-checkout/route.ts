@@ -94,41 +94,39 @@ export async function POST(request: NextRequest) {
           
           if (priceDifference <= 0) {
             console.log(`⚠️ Downgrade detected: price difference is $${priceDifference}`)
-            // For downgrades, just update the subscription without charging
+            
+            // For downgrades, update subscription but mark as "pending" in our database
+            // The actual plan change happens when next invoice is paid
             await stripe.subscriptions.update(existingPlan.stripeSubscriptionId, {
-              items: [{
-                id: subscription.items.data[0].id,
-                price: plan.stripePriceId,
-              }],
               metadata: {
                 userId: user.id,
-                planId,
+                planId, // New plan ID
                 credits: plan.credits.toString(),
+                pendingDowngrade: 'true', // Mark as pending downgrade
+                currentPlanId: existingPlan.name // Keep track of current plan
               },
-              proration_behavior: 'none', // No proration - keep original billing cycle
+              proration_behavior: 'none',
+            })
+            
+            // Update our database to show pending downgrade
+            await prisma.plan.update({
+              where: { id: existingPlan.id },
+              data: {
+                status: 'pending_downgrade',
+                pendingPlan: planId, // Store the plan they'll downgrade to
+                // Keep current plan name, don't change until next billing cycle
+              }
             })
             
             return NextResponse.json({ 
               upgraded: true,
-              message: 'Plan downgraded successfully',
-              nextInvoice: `No immediate charge. Next billing cycle will be $${newPlan.price}/month`
+              message: 'Downgrade scheduled for next billing cycle',
+              nextInvoice: `No charge today. Will switch to ${planId} on next billing date ($${newPlan.price}/month)`
             })
           } else {
             console.log(`📈 Upgrade detected: charging $${priceDifference} difference`)
             
-            // First, update the subscription without proration to preserve billing cycle
-            await stripe.subscriptions.update(existingPlan.stripeSubscriptionId, {
-              items: [{
-                id: subscription.items.data[0].id,
-                price: plan.stripePriceId,
-              }],
-              metadata: {
-                userId: user.id,
-                planId,
-                credits: plan.credits.toString(),
-              },
-              proration_behavior: 'none', // No proration - keep original billing cycle
-            })
+            // For upgrades: PAYMENT FIRST, then subscription changes
             
             // Create the invoice first (empty)
             const invoice = await stripe.invoices.create({
@@ -171,6 +169,23 @@ export async function POST(request: NextRequest) {
               console.log(`✅ Created upgrade invoice ${invoice.id} for $${priceDifference}`)
               console.log(`💳 Invoice payment status: ${paidInvoice.status}`)
               console.log(`💳 Invoice amount paid: $${(paidInvoice.amount_paid || 0) / 100}`)
+              
+              // ONLY AFTER successful payment: Update subscription and add credits
+              await stripe.subscriptions.update(existingPlan.stripeSubscriptionId, {
+                items: [{
+                  id: subscription.items.data[0].id,
+                  price: plan.stripePriceId,
+                }],
+                metadata: {
+                  userId: user.id,
+                  planId,
+                  credits: plan.credits.toString(),
+                },
+                proration_behavior: 'none', // No proration - keep original billing cycle
+              })
+              
+              console.log(`✅ Payment successful - subscription updated to ${planId}`)
+              
             } catch (paymentError) {
               console.error('❌ Invoice payment failed:', paymentError)
               console.log('🔧 Subscription upgrade completed but payment failed')

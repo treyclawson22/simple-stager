@@ -295,28 +295,19 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
     console.log('Existing plan:', existingPlan)
 
-    if (existingPlan && planId && existingPlan.name !== planId) {
-      console.log(`🔄 Plan upgrade detected: ${existingPlan.name} → ${planId}`)
+    // Webhooks now only handle subscription status updates
+    // Plan changes and credits are handled in the API routes after payment success
+    if (existingPlan) {
+      console.log(`🔄 Webhook updating subscription status only (plan changes handled in API after payment)`)
       
-      // Get credit amounts for old and new plans
-      const { SUBSCRIPTION_PLANS } = await import('@/lib/stripe')
-      const oldPlanCredits = SUBSCRIPTION_PLANS[existingPlan.name as keyof typeof SUBSCRIPTION_PLANS]?.credits || 0
-      const newPlanCredits = SUBSCRIPTION_PLANS[planId as keyof typeof SUBSCRIPTION_PLANS]?.credits || 0
-      const creditDifference = newPlanCredits - oldPlanCredits
-      
-      console.log(`💳 Credit calculation: ${existingPlan.name}(${oldPlanCredits}) → ${planId}(${newPlanCredits}) = ${creditDifference > 0 ? '+' : ''}${creditDifference} credits`)
-      
-      // BUSINESS LOGIC:
-      // - UPGRADES: Add credit difference immediately (user pays prorated amount)
-      // - DOWNGRADES: Don't reduce credits immediately (user keeps existing credits until next cycle)
-      
-      // Update the plan to new plan type (preserve existing dates since we disabled proration)
-      await prisma.plan.update({
-        where: { id: existingPlan.id },
+      // Only update status and dates, don't change plan name or credits via webhooks
+      await prisma.plan.updateMany({
+        where: { 
+          userId,
+          stripeSubscriptionId: subscription.id
+        },
         data: {
-          name: planId,
           status: subscription.status,
-          // Only update dates if they're valid
           ...(subscription.current_period_start && {
             currentPeriodStart: new Date(subscription.current_period_start * 1000)
           }),
@@ -326,86 +317,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         }
       })
 
-      // Handle credit changes based on upgrade vs downgrade
-      if (creditDifference > 0) {
-        // UPGRADE: Add credit difference immediately
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            credits: {
-              increment: creditDifference
-            }
-          }
-        })
-
-        // Subscription upgrade credits also expire after 60 days
-        const upgradeExpirationDate = new Date()
-        upgradeExpirationDate.setDate(upgradeExpirationDate.getDate() + 60)
-        
-        await prisma.creditLedger.create({
-          data: {
-            userId,
-            delta: creditDifference,
-            reason: 'subscription_upgrade',
-            expiresAt: upgradeExpirationDate, // Upgrade credits expire after 60 days
-            meta: JSON.stringify({
-              stripeSubscriptionId: subscription.id,
-              oldPlan: existingPlan.name,
-              newPlan: planId,
-              oldCredits: oldPlanCredits,
-              newCredits: newPlanCredits,
-              creditsAdded: creditDifference,
-              timing: 'immediate'
-            })
-          }
-        })
-
-        console.log(`✅ Plan upgraded from ${existingPlan.name} to ${planId}, added ${creditDifference} credits immediately`)
-        
-      } else if (creditDifference < 0) {
-        // DOWNGRADE: Don't reduce credits immediately, just update plan
-        // User keeps existing credits until next billing cycle
-        // Next cycle: They'll get the new plan's credit allocation (handled by invoice.payment_succeeded)
-        await prisma.creditLedger.create({
-          data: {
-            userId,
-            delta: 0, // No immediate credit change - credits preserved
-            reason: 'subscription_downgrade',
-            expiresAt: null, // Downgrade entries don't expire (no credits added)
-            meta: JSON.stringify({
-              stripeSubscriptionId: subscription.id,
-              oldPlan: existingPlan.name,
-              newPlan: planId,
-              oldCredits: oldPlanCredits,
-              newCredits: newPlanCredits,
-              creditDifference: creditDifference,
-              timing: 'no_immediate_change',
-              note: 'Credits preserved during downgrade - no reduction applied'
-            })
-          }
-        })
-
-        console.log(`✅ Plan downgraded from ${existingPlan.name} to ${planId}, existing credits preserved (no immediate reduction)`)
-        
-      } else {
-        // SAME CREDITS: Just a plan name change
-        console.log(`✅ Plan updated from ${existingPlan.name} to ${planId}, no credit change`)
-      }
-    } else {
-      // Just update existing plan status/dates
-      await prisma.plan.updateMany({
-        where: { 
-          userId,
-          stripeSubscriptionId: subscription.id
-        },
-        data: {
-          status: subscription.status,
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-        }
-      })
-
-      console.log(`✅ Updated subscription ${subscription.id} status for user ${userId}`)
+      console.log(`✅ Updated subscription ${subscription.id} status to ${subscription.status} for user ${userId}`)
     }
 
   } catch (error) {
@@ -454,22 +366,47 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
 
     console.log(`💰 Monthly billing cycle for user ${userId}, plan: ${planId}`)
 
-    // Get the current plan's credit allocation
+    // Check if there's a pending downgrade that should now take effect
+    const userPlan = await prisma.plan.findFirst({
+      where: {
+        userId,
+        stripeSubscriptionId: subscription.id
+      }
+    })
+
+    let actualPlanId = planId
+    if (userPlan?.status === 'pending_downgrade' && userPlan.pendingPlan) {
+      console.log(`🔄 Processing pending downgrade: ${userPlan.name} → ${userPlan.pendingPlan}`)
+      
+      // Update plan to the pending downgrade plan
+      await prisma.plan.update({
+        where: { id: userPlan.id },
+        data: {
+          name: userPlan.pendingPlan,
+          status: 'active',
+          pendingPlan: null, // Clear pending state
+        }
+      })
+      
+      actualPlanId = userPlan.pendingPlan
+      console.log(`✅ Downgrade completed: Now on ${actualPlanId} plan`)
+    }
+
+    // Get the actual plan's credit allocation (could be downgraded plan)
     const { SUBSCRIPTION_PLANS } = await import('@/lib/stripe')
-    const planCredits = SUBSCRIPTION_PLANS[planId as keyof typeof SUBSCRIPTION_PLANS]?.credits || 0
+    const planCredits = SUBSCRIPTION_PLANS[actualPlanId as keyof typeof SUBSCRIPTION_PLANS]?.credits || 0
 
     if (!planCredits) {
-      console.error(`❌ No credits configured for plan ${planId}`)
+      console.error(`❌ No credits configured for plan ${actualPlanId}`)
       return
     }
 
-    console.log(`💰 Plan ${planId} provides ${planCredits} monthly credits`)
+    console.log(`💰 Plan ${actualPlanId} provides ${planCredits} monthly credits`)
 
     // FIRST: Expire old subscription credits (59+ days old)
     await expireOldSubscriptionCredits(userId)
 
-    // THEN: Add monthly credits based on current plan (not old plan)
-    // This ensures downgraded users get the correct amount for their new plan
+    // THEN: Add monthly credits based on actual current plan
     await prisma.user.update({
       where: { id: userId },
       data: {
@@ -492,7 +429,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
         meta: JSON.stringify({
           stripeInvoiceId: invoice.id,
           stripeSubscriptionId: subscription.id,
-          planId: planId,
+          planId: actualPlanId,
           period: 'recurring',
           billingCycle: 'monthly',
           creditsAdded: planCredits
@@ -500,7 +437,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       }
     })
 
-    console.log(`✅ Added ${planCredits} monthly credits to user ${userId} for ${planId} plan`)
+    console.log(`✅ Added ${planCredits} monthly credits to user ${userId} for ${actualPlanId} plan`)
   }
 }
 
