@@ -15,7 +15,8 @@ export function SubscriptionManagement({ user }: SubscriptionManagementProps) {
     return null // Don't show if no active subscription
   }
 
-  const handleUpdatePaymentMethod = async () => {
+
+  const handleManageSubscription = async () => {
     setIsProcessing(true)
     
     try {
@@ -38,50 +39,8 @@ export function SubscriptionManagement({ user }: SubscriptionManagementProps) {
       // Redirect to Stripe Customer Portal
       window.location.href = data.url
     } catch (error) {
-      console.error('Failed to open payment management:', error)
-      alert('Failed to open payment management. Please try again.')
-      setIsProcessing(false)
-    }
-  }
-
-  const handleCancelSubscription = async () => {
-    const confirmed = confirm(
-      `Cancel Subscription\n\n` +
-      `Are you sure you want to cancel your ${activePlan.name} subscription?\n\n` +
-      `• Your subscription will remain active until ${new Date(activePlan.currentPeriodEnd || '').toLocaleDateString()}\n` +
-      `• You will keep your remaining credits\n` +
-      `• You can resubscribe anytime\n\n` +
-      `This action cannot be undone. Continue?`
-    )
-
-    if (!confirmed) return
-
-    setIsProcessing(true)
-    
-    try {
-      const response = await fetch('/api/stripe/cancel-subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          subscriptionId: activePlan.stripeSubscriptionId
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to cancel subscription')
-      }
-
-      alert('✅ Subscription canceled successfully.\n\nYour plan will remain active until your next billing date, and you will keep all remaining credits.')
-      
-      // Refresh the page to show updated status
-      window.location.reload()
-    } catch (error) {
-      console.error('Failed to cancel subscription:', error)
-      alert('Failed to cancel subscription. Please try again.')
+      console.error('Failed to open subscription management:', error)
+      alert('Failed to open subscription management. Please try again.')
       setIsProcessing(false)
     }
   }
@@ -108,28 +67,21 @@ export function SubscriptionManagement({ user }: SubscriptionManagementProps) {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="space-y-3">
+        {/* Action Button */}
+        <div>
           <button
-            onClick={handleUpdatePaymentMethod}
+            onClick={handleManageSubscription}
             disabled={isProcessing}
-            className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
-            {isProcessing ? 'Opening...' : '💳 Update Payment Method'}
-          </button>
-
-          <button
-            onClick={handleCancelSubscription}
-            disabled={isProcessing}
-            className="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-          >
-            {isProcessing ? 'Processing...' : '❌ Cancel Subscription'}
+            {isProcessing ? 'Opening...' : '⚙️ Manage Subscription'}
           </button>
         </div>
 
         <div className="text-xs text-gray-500 mt-4">
-          <p>• Update payment method opens Stripe's secure portal</p>
-          <p>• Cancellation takes effect at the end of your billing period</p>
+          <p>• Manage subscription opens Stripe's secure portal</p>
+          <p>• Update payment methods, view billing history, and cancel subscription</p>
+          <p>• Cancellations take effect at the end of your billing period</p>
           <p>• You will keep all remaining credits after cancellation</p>
         </div>
       </div>
