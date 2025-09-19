@@ -62,12 +62,22 @@ export async function POST(request: NextRequest) {
       // Check if user has an existing active subscription
       console.log(`🔍 Checking for existing subscription for user ${user.id}`)
       
-      const existingPlan = await prisma.plan.findFirst({
+      // Look for pending_downgrade plan first, then active plan (same logic as UI)
+      let existingPlan = await prisma.plan.findFirst({
         where: { 
           userId: user.id,
-          status: 'active'
+          status: 'pending_downgrade'
         }
       })
+      
+      if (!existingPlan) {
+        existingPlan = await prisma.plan.findFirst({
+          where: { 
+            userId: user.id,
+            status: 'active'
+          }
+        })
+      }
       
       console.log(`🔍 Existing plan found:`, existingPlan)
       
@@ -78,6 +88,14 @@ export async function POST(request: NextRequest) {
       console.log(`🔍 All user plans:`, allPlans)
 
       if (existingPlan && existingPlan.stripeSubscriptionId) {
+        // Debug logging for cancel downgrade
+        if (cancelDowngrade) {
+          console.log(`🔧 DEBUG: Cancel downgrade requested`)
+          console.log(`🔧 DEBUG: Existing plan status: ${existingPlan.status}`)
+          console.log(`🔧 DEBUG: Existing plan name: ${existingPlan.name}`)
+          console.log(`🔧 DEBUG: Requested planId: ${planId}`)
+        }
+        
         // Handle cancel downgrade request
         if (cancelDowngrade && existingPlan.status === 'pending_downgrade') {
           console.log(`🔄 Canceling downgrade for subscription ${existingPlan.stripeSubscriptionId}`)
