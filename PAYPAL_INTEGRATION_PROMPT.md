@@ -1,7 +1,7 @@
 # PayPal Billing Integration - Setup Prompt for Claude
 
 ## Context Summary
-I'm working on a Next.js 15 virtual staging application called SimpleStager. The app allows users to upload room photos and generate AI-staged images using Gemini 2.5 Flash. Users consume credits for downloads, and I need to implement PayPal billing for credit purchases.
+I'm working on a Next.js 15 virtual staging application called Simple Stager. The app allows users to upload room photos and generate AI-staged images using Gemini 2.5 Flash. Users consume credits for downloads, and I need to implement PayPal billing for credit purchases.
 
 ## Current Application State
 - **Framework**: Next.js 15 with TypeScript, Tailwind CSS, Prisma ORM
@@ -84,7 +84,7 @@ GEMINI_API_KEY=your-gemini-api-key
 ```
 
 ## Request
-Please help me implement PayPal billing integration for the SimpleStager credit system. I want to:
+Please help me implement PayPal billing integration for the Simple Stager credit system. I want to:
 
 1. Set up PayPal Developer account and get the necessary credentials
 2. Create a clean, professional billing page with credit package options

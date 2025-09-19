@@ -1,8 +1,8 @@
-# SimpleStager Development Guide
+# Simple Stager Development Guide
 
 ## 🚀 Quick Start
 
-Your SimpleStager application is now configured with real API keys and ready for development!
+Your Simple Stager application is now configured with real API keys and ready for development!
 
 ### Prerequisites Installed ✅
 - Node.js 18+
@@ -63,7 +63,7 @@ The application will be available at: **http://localhost:3000**
 - ✅ Image upload with validation
 - ✅ AI prompt generation (OpenAI + Gemini fallback)
 - ✅ Mock image generation
-- ✅ SimpleStager watermarking
+- ✅ Simple Stager watermarking
 - ✅ Credit system and downloads
 - ✅ Workflow history
 
@@ -191,4 +191,4 @@ npx prisma migrate reset
 - Use Prisma Studio to inspect database state
 - Check the Rails logs for detailed error information
 
-Your SimpleStager application is production-ready and waiting for real image generation integration! 🎨
+Your Simple Stager application is production-ready and waiting for real image generation integration! 🎨

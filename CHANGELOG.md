@@ -116,7 +116,7 @@ This release completely resolves persistent image upload and display issues by m
 - **Generation Workflow**: ✅ Complete upload → display → generate flow functional
 - **Cost Optimization**: ✅ $0 bandwidth costs with Cloudflare R2
 
-**🚀 SimpleStager now has enterprise-grade cloud storage with complete image workflow reliability!**
+**🚀 Simple Stager now has enterprise-grade cloud storage with complete image workflow reliability!**
 
 ---
 

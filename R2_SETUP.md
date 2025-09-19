@@ -2,7 +2,7 @@
 
 ## 🎯 Overview
 
-This guide shows how to set up Cloudflare R2 cloud storage for SimpleStager to replace local file storage. R2 is the most cost-effective solution for image-heavy sites.
+This guide shows how to set up Cloudflare R2 cloud storage for Simple Stager to replace local file storage. R2 is the most cost-effective solution for image-heavy sites.
 
 ## 💰 Why R2?
 

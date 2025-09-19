@@ -1,4 +1,4 @@
-# SimpleStager
+# Simple Stager
 
 AI-powered real estate photo enhancement SaaS application that allows agents to transform room photos with three modes: Stage (add furniture), Declutter (remove clutter), or Improve (light renovations).
 
@@ -33,7 +33,7 @@ AI-powered real estate photo enhancement SaaS application that allows agents to 
 
 ### **PRODUCTION READY** ✅
 
-SimpleStager is successfully deployed and fully operational:
+Simple Stager is successfully deployed and fully operational:
 
 - **🌐 Production URL**: [https://simple-stager-web-production.up.railway.app](https://simple-stager-web-production.up.railway.app)
 - **🔧 Platform**: Railway (automated deployments from main branch)
@@ -112,7 +112,7 @@ simple-stager/
    Fill in your actual API keys and database URLs in `.env.local`:
    ```env
    # Database
-   DATABASE_URL="postgresql://postgres:password@localhost:5432/simplestager"
+   DATABASE_URL="postgresql://postgres:password@localhost:5432/simple-stager"
    REDIS_URL="redis://localhost:6379"
 
    # Authentication
