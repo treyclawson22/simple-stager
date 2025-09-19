@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔍 User info:`, { id: user.id, email: user.email, name: user.name })
 
-    const { planId, type } = await request.json()
+    const { planId, type, cancelDowngrade } = await request.json()
     console.log(`🔍 Request data:`, { planId, type })
 
     if (!planId || !type) {
@@ -78,6 +78,58 @@ export async function POST(request: NextRequest) {
       console.log(`🔍 All user plans:`, allPlans)
 
       if (existingPlan && existingPlan.stripeSubscriptionId) {
+        // Handle cancel downgrade request
+        if (cancelDowngrade && existingPlan.status === 'pending_downgrade') {
+          console.log(`🔄 Canceling downgrade for subscription ${existingPlan.stripeSubscriptionId}`)
+          
+          try {
+            // Get the subscription's current price to revert to
+            const subscription = await stripe.subscriptions.retrieve(existingPlan.stripeSubscriptionId)
+            const currentPlan = SUBSCRIPTION_PLANS[existingPlan.name as keyof typeof SUBSCRIPTION_PLANS]
+            
+            if (!currentPlan) {
+              throw new Error('Current plan not found in SUBSCRIPTION_PLANS')
+            }
+            
+            // Update subscription to remove downgrade and revert to current plan price
+            await stripe.subscriptions.update(existingPlan.stripeSubscriptionId, {
+              items: [{
+                id: subscription.items.data[0].id,
+                price: currentPlan.stripePriceId,
+              }],
+              metadata: {
+                userId: user.id,
+                planId: existingPlan.name, // Keep current plan
+                credits: currentPlan.credits.toString(),
+                // Remove all downgrade-related metadata
+              },
+              proration_behavior: 'none',
+            })
+            
+            // Update our database to clear pending downgrade
+            await prisma.plan.update({
+              where: { id: existingPlan.id },
+              data: {
+                status: 'active',
+                pendingPlan: null, // Clear pending downgrade
+              }
+            })
+            
+            console.log(`✅ Canceled downgrade for subscription ${existingPlan.stripeSubscriptionId}`)
+            
+            return NextResponse.json({ 
+              canceled: true,
+              message: `Downgrade canceled. You will continue on your ${existingPlan.name} plan.`
+            })
+            
+          } catch (error) {
+            console.error('❌ Failed to cancel downgrade:', error)
+            return NextResponse.json({ 
+              error: 'Failed to cancel downgrade' 
+            }, { status: 500 })
+          }
+        }
+        
         // This is a subscription upgrade/downgrade - modify existing subscription
         console.log(`🔄 Upgrading subscription ${existingPlan.stripeSubscriptionId} from ${existingPlan.name} to ${planId}`)
         

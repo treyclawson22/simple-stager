@@ -200,6 +200,58 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
     setSelectedPlan(null)
   }
 
+  const handleCancelDowngrade = async () => {
+    setIsConfirming(true)
+    console.log('🔧 DEBUG: Canceling downgrade')
+    
+    try {
+      // Map current plan name back to subscription price
+      const planIdMap: Record<string, string> = {
+        'entry': 'entry',
+        'showcase': 'showcase', 
+        'prime': 'prime',
+        'prestige': 'prestige',
+        'portfolio': 'portfolio'
+      }
+      
+      const currentPlanId = planIdMap[currentPlanName]
+      if (!currentPlanId) {
+        throw new Error('Invalid current plan')
+      }
+
+      // Call API to revert back to current plan and cancel downgrade
+      const response = await fetch('/api/stripe/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          planId: currentPlanId,
+          type: 'subscription',
+          cancelDowngrade: true
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to cancel downgrade')
+      }
+
+      if (data.canceled) {
+        alert(`✅ ${data.message}`)
+        // Refresh the page to show updated plan
+        window.location.reload()
+      } else {
+        throw new Error('Unexpected response format')
+      }
+    } catch (error) {
+      console.error('Failed to cancel downgrade:', error)
+      alert('Failed to cancel downgrade. Please try again.')
+      setIsConfirming(false)
+    }
+  }
+
   const getCardClasses = (plan: PlanOption) => {
     const isCurrentPlan = plan.name === currentPlanName
     const isSelected = plan.name === selectedPlan
@@ -318,11 +370,13 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
         ))}
       </div>
 
-      {/* Action Buttons - Only show when a new package is selected */}
-      {selectedPlan && (
+      {/* Action Buttons - Show for new plan selection OR pending downgrade */}
+      {(selectedPlan || isPendingDowngrade) && (
         <div className="mt-6 flex justify-between items-center">
           <div className="text-sm text-gray-500">
-            {isUpgrade ? (
+            {isPendingDowngrade && !selectedPlan ? (
+              <>You have a scheduled downgrade to {pendingPlanName} on your next billing cycle.</>
+            ) : isUpgrade ? (
               <>Upgrades take effect immediately upon confirmation.{isEligibleForReferralDiscount && " Your 25% referral discount will be applied!"}</>
             ) : isDowngrade ? (
               <>Downgrades take effect on your next billing cycle.</>
@@ -332,21 +386,33 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
           </div>
           
           <div className="flex space-x-3">
-            <button 
-              onClick={handleCancel}
-              disabled={isConfirming}
-              className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Cancel
-            </button>
-            <button 
-              onClick={handleConfirmChange}
-              disabled={isConfirming}
-              className="px-4 py-2 text-white text-sm font-medium rounded-md hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed" 
-              style={{ backgroundColor: '#089AB2' }}
-            >
-              {isConfirming ? 'Processing...' : isUpgrade ? 'Upgrade' : isDowngrade ? 'Downgrade' : 'Confirm Changes'}
-            </button>
+            {isPendingDowngrade && !selectedPlan ? (
+              <button 
+                onClick={handleCancelDowngrade}
+                disabled={isConfirming}
+                className="px-4 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isConfirming ? 'Processing...' : 'Cancel Downgrade'}
+              </button>
+            ) : (
+              <>
+                <button 
+                  onClick={handleCancel}
+                  disabled={isConfirming}
+                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleConfirmChange}
+                  disabled={isConfirming}
+                  className="px-4 py-2 text-white text-sm font-medium rounded-md hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed" 
+                  style={{ backgroundColor: '#089AB2' }}
+                >
+                  {isConfirming ? 'Processing...' : isUpgrade ? 'Upgrade' : isDowngrade ? 'Downgrade' : 'Confirm Changes'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
