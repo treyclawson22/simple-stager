@@ -20,7 +20,7 @@ export default async function DashboardLayout({
     <div className="min-h-screen bg-gray-50">
       <DashboardNav user={user} />
       <main className="py-10">
-        <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-5 md:px-[60px] lg:px-[100px]">
           {children}
         </div>
       </main>

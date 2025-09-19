@@ -64,7 +64,7 @@ function SignInForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{backgroundColor: '#F9FAFB'}}>
+    <div className="min-h-screen flex items-center justify-center py-12 px-5 md:px-[60px] lg:px-[100px]" style={{backgroundColor: '#F9FAFB'}}>
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="mx-auto flex items-center justify-center">

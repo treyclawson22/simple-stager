@@ -214,7 +214,7 @@ function SignupForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-5 md:px-[60px] lg:px-[100px]">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
           <img src="/logo.png" alt="SimpleStager" className="mx-auto h-21 w-auto" />

@@ -15,7 +15,7 @@ export default async function Dashboard({ searchParams }: DashboardProps) {
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 py-10">
-        <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-5 md:px-[60px] lg:px-[100px]">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
             <h3 className="text-lg font-medium text-yellow-800 mb-2">Authentication Required</h3>
             <p className="text-yellow-700">Please sign in to access your dashboard.</p>
