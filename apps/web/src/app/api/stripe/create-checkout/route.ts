@@ -156,13 +156,26 @@ export async function POST(request: NextRequest) {
             const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id)
             
             // Explicitly attempt payment
-            const paidInvoice = await stripe.invoices.pay(finalizedInvoice.id, {
-              paid_out_of_band: false
-            })
-            
-            console.log(`✅ Created upgrade invoice ${invoice.id} for $${priceDifference}`)
-            console.log(`💳 Invoice payment status: ${paidInvoice.status}`)
-            console.log(`💳 Invoice amount paid: $${(paidInvoice.amount_paid || 0) / 100}`)
+            let paidInvoice
+            try {
+              paidInvoice = await stripe.invoices.pay(finalizedInvoice.id)
+              console.log(`✅ Created upgrade invoice ${invoice.id} for $${priceDifference}`)
+              console.log(`💳 Invoice payment status: ${paidInvoice.status}`)
+              console.log(`💳 Invoice amount paid: $${(paidInvoice.amount_paid || 0) / 100}`)
+            } catch (paymentError) {
+              console.error('❌ Invoice payment failed:', paymentError)
+              console.log('🔧 Subscription upgrade completed but payment failed')
+              console.log('🔧 Invoice created:', invoice.id)
+              console.log('🔧 Invoice status:', finalizedInvoice.status)
+              
+              // Still return success since subscription was upgraded
+              return NextResponse.json({ 
+                upgraded: true,
+                message: 'Plan upgraded successfully',
+                nextInvoice: `Upgrade completed. Payment processing... Check your payment method if needed.`,
+                paymentWarning: true
+              })
+            }
             
             return NextResponse.json({ 
               upgraded: true,

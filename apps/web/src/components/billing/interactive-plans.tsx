@@ -132,6 +132,7 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
     }
     
     setIsConfirming(true)
+    console.log('🔧 DEBUG: Starting checkout process for plan:', selectedPlan)
     
     try {
       // Map plan names to IDs for Stripe
