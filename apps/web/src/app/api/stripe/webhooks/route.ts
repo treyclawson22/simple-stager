@@ -310,14 +310,19 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       // - UPGRADES: Add credit difference immediately (user pays prorated amount)
       // - DOWNGRADES: Don't reduce credits immediately (user keeps existing credits until next cycle)
       
-      // Update the plan to new plan type
+      // Update the plan to new plan type (preserve existing dates since we disabled proration)
       await prisma.plan.update({
         where: { id: existingPlan.id },
         data: {
           name: planId,
           status: subscription.status,
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          // Only update dates if they're valid
+          ...(subscription.current_period_start && {
+            currentPeriodStart: new Date(subscription.current_period_start * 1000)
+          }),
+          ...(subscription.current_period_end && {
+            currentPeriodEnd: new Date(subscription.current_period_end * 1000)
+          }),
         }
       })
 
