@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const generatedCodes = []
+    const generatedCodes: string[] = []
 
     for (let i = 0; i < count; i++) {
       let code = generateSpecialCode()
