@@ -130,9 +130,17 @@ export async function POST(request: NextRequest) {
               proration_behavior: 'none', // No proration - keep original billing cycle
             })
             
-            // Then, create a one-time invoice for the price difference
+            // Create the invoice first (empty)
+            const invoice = await stripe.invoices.create({
+              customer: stripeCustomerId,
+              auto_advance: false, // We'll finalize manually
+              collection_method: 'charge_automatically'
+            })
+            
+            // Then, create the invoice item and attach it to the specific invoice
             const invoiceItem = await stripe.invoiceItems.create({
               customer: stripeCustomerId,
+              invoice: invoice.id, // ← KEY FIX: Attach to specific invoice
               amount: Math.round(priceDifference * 100), // Convert to cents
               currency: 'usd',
               description: `Plan upgrade: ${existingPlan.name} to ${planId} (price difference)`,
@@ -144,14 +152,7 @@ export async function POST(request: NextRequest) {
               }
             })
             
-            // Create and pay the invoice immediately
-            const invoice = await stripe.invoices.create({
-              customer: stripeCustomerId,
-              auto_advance: true, // Automatically finalize and attempt payment
-              collection_method: 'charge_automatically'
-            })
-            
-            // Finalize the invoice
+            // Finalize the invoice (this locks in the invoice items)
             const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id)
             
             // Explicitly attempt payment
