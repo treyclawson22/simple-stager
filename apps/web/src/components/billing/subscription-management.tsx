@@ -9,7 +9,7 @@ interface SubscriptionManagementProps {
 
 export function SubscriptionManagement({ user }: SubscriptionManagementProps) {
   const [isProcessing, setIsProcessing] = useState(false)
-  const activePlan = user?.plans?.find(plan => plan.status === 'active')
+  const activePlan = user?.plans?.find(plan => plan.status === 'active' || plan.status === 'pending_downgrade')
 
   if (!activePlan || !activePlan.stripeSubscriptionId) {
     return null // Don't show if no active subscription

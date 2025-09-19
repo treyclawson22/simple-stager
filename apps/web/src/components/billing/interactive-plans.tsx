@@ -67,10 +67,23 @@ const plans: PlanOption[] = [
 ]
 
 export function InteractivePlans({ user }: InteractivePlansProps) {
-  // Find the user's active plan
-  const activePlan = user?.plans?.find((plan: any) => plan.status === 'active')
-  const currentPlanName = activePlan?.name || 'Free Credits'
-  const isFreePlan = activePlan && !activePlan.stripeSubscriptionId
+  // Find the user's current plan - prioritize pending_downgrade, then active, then fallback to Free Credits
+  const userPlans = user?.plans || []
+  
+  // Look for pending downgrade first (this takes priority for display purposes)
+  const pendingDowngradePlan = userPlans.find((plan: any) => plan.status === 'pending_downgrade')
+  
+  // Look for active plan
+  const activePlan = userPlans.find((plan: any) => plan.status === 'active')
+  
+  // Use pending downgrade plan if it exists, otherwise use active plan
+  const displayPlan = pendingDowngradePlan || activePlan
+  
+  // For pending downgrades, we show the CURRENT plan name (what they're currently on)
+  const currentPlanName = displayPlan?.name || 'Free Credits'
+  const isFreePlan = displayPlan && !displayPlan.stripeSubscriptionId
+  const isPendingDowngrade = displayPlan?.status === 'pending_downgrade'
+  const pendingPlanName = displayPlan?.pendingPlan
   
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
   const [isConfirming, setIsConfirming] = useState(false)
@@ -260,9 +273,16 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
                   <span className={`text-xs px-2 py-1 rounded-full font-medium mb-1 ${
                     isFreePlan 
                       ? 'bg-purple-100 text-purple-800' 
+                      : isPendingDowngrade
+                      ? 'bg-orange-100 text-orange-800'
                       : 'bg-teal-100 text-teal-800'
                   }`}>
-                    {isFreePlan ? 'Free Plan' : 'Current'}
+                    {isFreePlan ? 'Free Plan' : isPendingDowngrade ? 'Current (until next cycle)' : 'Current'}
+                  </span>
+                )}
+                {plan.name === pendingPlanName && isPendingDowngrade && (
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium mb-1">
+                    Upcoming Plan
                   </span>
                 )}
                 {plan.name === selectedPlan && (

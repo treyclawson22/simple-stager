@@ -345,7 +345,19 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     }
   })
 
-  console.log(`Canceled subscription ${subscription.id} for user ${userId}`)
+  // Create a "Free Credits" plan for the user
+  await prisma.plan.create({
+    data: {
+      userId,
+      name: 'Free Credits',
+      status: 'active',
+      stripeSubscriptionId: null, // No Stripe subscription for free plan
+      currentPeriodStart: new Date(),
+      currentPeriodEnd: null, // Free plan doesn't expire
+    }
+  })
+
+  console.log(`Canceled subscription ${subscription.id} for user ${userId} and created Free Credits plan`)
 }
 
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
