@@ -79,18 +79,32 @@ function SignupForm() {
       }
       
       // If not special, check regular referral codes (25% discount)
-      console.log(`Validating regular referral code: ${code}`)
+      console.log(`Validating regular referral code: ${normalizedCode}`)
       
-      // Simulate API call for regular referral codes
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // Mock validation - any code 3+ characters is valid for regular referrals
-      const isValid = code.length >= 3
-      setIsValidReferral(isValid)
-      if (isValid) {
-        setReferralType('regular')
-        setSpecialCredits(0)
+      try {
+        const regularResponse = await fetch('/api/referral/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: normalizedCode })
+        })
+        
+        if (regularResponse.ok) {
+          const regularData = await regularResponse.json()
+          if (regularData.isValid) {
+            setIsValidReferral(true)
+            setReferralType('regular')
+            setSpecialCredits(0)
+            return
+          }
+        }
+      } catch (apiError) {
+        console.log('Regular referral API validation failed')
       }
+      
+      // If both special and regular validation fail, code is invalid
+      setIsValidReferral(false)
+      setReferralType(null)
+      setSpecialCredits(0)
     } catch (error) {
       setIsValidReferral(false)
       console.error('Error validating referral code:', error)
@@ -167,6 +181,7 @@ function SignupForm() {
           password: formData.password,
           name: `${formData.firstName} ${formData.lastName}`.trim(),
           specialReferralCode: referralType === 'special' ? referralCode : null,
+          regularReferralCode: referralType === 'regular' ? referralCode : null,
         }),
       })
 

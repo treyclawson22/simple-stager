@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   console.log('🚀 Starting signup process...')
 
   try {
-    const { email, password, name, specialReferralCode } = await request.json()
+    const { email, password, name, specialReferralCode, regularReferralCode } = await request.json()
 
     if (!email || !password) {
       return NextResponse.json(
@@ -58,6 +58,21 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Check if regular referral code is provided and valid
+      let referringUser = null
+      if (regularReferralCode) {
+        const normalizedCode = regularReferralCode.toUpperCase().trim()
+        console.log(`🤝 Checking regular referral code: ${normalizedCode}`)
+        
+        referringUser = await prisma.user.findFirst({
+          where: { referralCode: normalizedCode }
+        })
+
+        if (!referringUser) {
+          throw new Error('Invalid referral code')
+        }
+      }
+
       console.log('🔐 Hashing password...')
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 12)
@@ -75,6 +90,7 @@ export async function POST(request: NextRequest) {
           authProvider: 'password',
           credits: initialCredits,
           referralCode,
+          referredById: referringUser ? referringUser.id : null,
         }
       })
 
