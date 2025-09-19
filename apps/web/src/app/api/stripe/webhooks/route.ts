@@ -260,27 +260,99 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
-  const userId = subscription.metadata?.userId
+  console.log(`🔄 Processing subscription.updated: ${subscription.id}`)
   
-  if (!userId) {
-    console.error('No user ID in subscription metadata')
-    return
-  }
+  try {
+    const userId = subscription.metadata?.userId
+    const planId = subscription.metadata?.planId
+    const credits = parseInt(subscription.metadata?.credits || '0')
 
-  // Update plan record
-  await prisma.plan.updateMany({
-    where: { 
+    console.log('Subscription updated metadata:', {
       userId,
-      stripeSubscriptionId: subscription.id
-    },
-    data: {
-      status: subscription.status,
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-    }
-  })
+      planId,
+      credits,
+      subscriptionId: subscription.id,
+      status: subscription.status
+    })
 
-  console.log(`Updated subscription ${subscription.id} for user ${userId}`)
+    if (!userId) {
+      console.error('❌ No user ID in subscription metadata')
+      throw new Error('Missing userId in subscription metadata')
+    }
+
+    // Check if this is a plan change (different planId)
+    const existingPlan = await prisma.plan.findFirst({
+      where: { 
+        userId,
+        stripeSubscriptionId: subscription.id
+      }
+    })
+
+    console.log('Existing plan:', existingPlan)
+
+    if (existingPlan && planId && existingPlan.name !== planId) {
+      console.log(`🔄 Plan upgrade detected: ${existingPlan.name} → ${planId}`)
+      
+      // Update the plan to new plan type
+      await prisma.plan.update({
+        where: { id: existingPlan.id },
+        data: {
+          name: planId,
+          status: subscription.status,
+          currentPeriodStart: new Date(subscription.current_period_start * 1000),
+          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        }
+      })
+
+      // Add credits for the new plan if specified
+      if (credits > 0) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            credits: {
+              increment: credits
+            }
+          }
+        })
+
+        // Add credit ledger entry for upgrade
+        await prisma.creditLedger.create({
+          data: {
+            userId,
+            delta: credits,
+            reason: 'subscription_upgrade',
+            meta: JSON.stringify({
+              stripeSubscriptionId: subscription.id,
+              oldPlan: existingPlan.name,
+              newPlan: planId,
+              period: 'upgrade'
+            })
+          }
+        })
+
+        console.log(`✅ Plan upgraded from ${existingPlan.name} to ${planId}, added ${credits} credits`)
+      }
+    } else {
+      // Just update existing plan status/dates
+      await prisma.plan.updateMany({
+        where: { 
+          userId,
+          stripeSubscriptionId: subscription.id
+        },
+        data: {
+          status: subscription.status,
+          currentPeriodStart: new Date(subscription.current_period_start * 1000),
+          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        }
+      })
+
+      console.log(`✅ Updated subscription ${subscription.id} status for user ${userId}`)
+    }
+
+  } catch (error) {
+    console.error(`❌ handleSubscriptionUpdated failed for ${subscription.id}:`, error)
+    throw error // Re-throw to be caught by main handler
+  }
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
