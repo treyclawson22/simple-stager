@@ -82,7 +82,7 @@ export function DashboardNav({ user }: DashboardNavProps) {
               
               <button
                 onClick={() => setIsSupportModalOpen(true)}
-                className="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium hover:border-gray-300 hover:text-gray-700"
+                className="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium hover:border-gray-300 hover:text-gray-700 cursor-pointer"
                 style={{ 
                   borderColor: 'transparent',
                   color: '#6B7280'
@@ -118,7 +118,7 @@ export function DashboardNav({ user }: DashboardNavProps) {
             <div className="relative flex items-center">
               <button
                 onClick={() => signOut({ callbackUrl: '/' })}
-                className="text-sm font-medium hover:text-gray-700"
+                className="text-sm font-medium hover:text-gray-700 cursor-pointer"
                 style={{ color: '#6B7280' }}
               >
                 Sign out
@@ -205,7 +205,7 @@ export function DashboardNav({ user }: DashboardNavProps) {
                   setIsSupportModalOpen(true)
                   setIsMobileMenuOpen(false)
                 }}
-                className="block w-full text-left pl-3 pr-4 py-2 border-l-4 text-base font-medium"
+                className="block w-full text-left pl-3 pr-4 py-2 border-l-4 text-base font-medium cursor-pointer"
                 style={{
                   borderColor: 'transparent',
                   color: '#6B7280'
@@ -255,7 +255,7 @@ export function DashboardNav({ user }: DashboardNavProps) {
                     signOut({ callbackUrl: '/' })
                     setIsMobileMenuOpen(false)
                   }}
-                  className="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                  className="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 cursor-pointer"
                 >
                   Sign out
                 </button>
