@@ -165,15 +165,12 @@ export async function POST(request: NextRequest) {
           if (priceDifference <= 0) {
             console.log(`⚠️ Downgrade detected: price difference is $${priceDifference}`)
             
-            // For downgrades, update subscription price immediately and mark as "pending" in our database
+            // For downgrades, DON'T change subscription price immediately to prevent credit arbitrage
+            // Only update metadata to schedule the downgrade for next billing cycle
             await stripe.subscriptions.update(existingPlan.stripeSubscriptionId, {
-              items: [{
-                id: subscription.items.data[0].id,
-                price: plan.stripePriceId, // Change to new lower price
-              }],
               metadata: {
                 userId: user.id,
-                planId, // New plan ID
+                planId, // New plan ID for next cycle
                 credits: plan.credits.toString(),
                 pendingDowngrade: 'true', // Mark as pending downgrade
                 currentPlanId: existingPlan.name // Keep track of current plan
@@ -181,11 +178,11 @@ export async function POST(request: NextRequest) {
               proration_behavior: 'none',
             })
             
-            // Update our database to show pending downgrade
+            // Update our database to show pending downgrade (keep current plan name)
             await prisma.plan.update({
               where: { id: existingPlan.id },
               data: {
-                name: planId, // Update to new plan name immediately for UI
+                // Keep current plan name to show "Current (until next cycle)"
                 status: 'pending_downgrade',
                 pendingPlan: planId, // Store the plan they'll downgrade to
               }
