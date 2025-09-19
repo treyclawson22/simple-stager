@@ -49,13 +49,14 @@ model Plan {
 }
 
 model CreditLedger {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  delta     Int      // + or -
-  reason    String   // purchase|download|admin_adjust|referral_reward|trial
-  meta      String?  // Additional metadata (JSON string for SQLite)
-  createdAt DateTime @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  delta     Int       // + or -
+  reason    String    // purchase|download|admin_adjust|referral_reward|trial|subscription
+  meta      String?   // Additional metadata (JSON string for SQLite)
+  expiresAt DateTime? // When subscription credits expire (null for credit pack purchases)
+  createdAt DateTime  @default(now())
   
   @@map("credit_ledger")
 }

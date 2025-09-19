@@ -10,7 +10,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    console.log(`🔍 User info:`, { id: user.id, email: user.email, name: user.name })
+
     const { planId, type } = await request.json()
+    console.log(`🔍 Request data:`, { planId, type })
 
     if (!planId || !type) {
       return NextResponse.json({ error: 'Plan ID and type are required' }, { status: 400 })
@@ -56,18 +59,132 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid subscription plan' }, { status: 400 })
       }
 
-      sessionConfig.line_items = [{
-        price: plan.stripePriceId,
-        quantity: 1,
-      }]
-
-      // Add subscription metadata
-      sessionConfig.subscription_data = {
-        metadata: {
+      // Check if user has an existing active subscription
+      console.log(`🔍 Checking for existing subscription for user ${user.id}`)
+      
+      const existingPlan = await prisma.plan.findFirst({
+        where: { 
           userId: user.id,
-          planId,
-          credits: plan.credits.toString(),
-        },
+          status: 'active'
+        }
+      })
+      
+      console.log(`🔍 Existing plan found:`, existingPlan)
+      
+      // Also check for any plans regardless of status for debugging
+      const allPlans = await prisma.plan.findMany({
+        where: { userId: user.id }
+      })
+      console.log(`🔍 All user plans:`, allPlans)
+
+      if (existingPlan && existingPlan.stripeSubscriptionId) {
+        // This is a subscription upgrade/downgrade - modify existing subscription
+        console.log(`🔄 Upgrading subscription ${existingPlan.stripeSubscriptionId} from ${existingPlan.name} to ${planId}`)
+        
+        try {
+          // Get the current subscription from Stripe
+          const subscription = await stripe.subscriptions.retrieve(existingPlan.stripeSubscriptionId)
+          
+          // Calculate price difference (your business logic)
+          const currentPlan = SUBSCRIPTION_PLANS[existingPlan.name as keyof typeof SUBSCRIPTION_PLANS]
+          const newPlan = plan
+          const priceDifference = newPlan.price - currentPlan.price
+          
+          console.log(`💰 Price calculation: ${existingPlan.name} ($${currentPlan.price}) → ${planId} ($${newPlan.price}) = $${priceDifference} difference`)
+          
+          if (priceDifference <= 0) {
+            console.log(`⚠️ Downgrade detected: price difference is $${priceDifference}`)
+            // For downgrades, just update the subscription without charging
+            await stripe.subscriptions.update(existingPlan.stripeSubscriptionId, {
+              items: [{
+                id: subscription.items.data[0].id,
+                price: plan.stripePriceId,
+              }],
+              metadata: {
+                userId: user.id,
+                planId,
+                credits: plan.credits.toString(),
+              },
+              proration_behavior: 'none', // No proration - keep original billing cycle
+            })
+            
+            return NextResponse.json({ 
+              upgraded: true,
+              message: 'Plan downgraded successfully',
+              nextInvoice: `No immediate charge. Next billing cycle will be $${newPlan.price}/month`
+            })
+          } else {
+            console.log(`📈 Upgrade detected: charging $${priceDifference} difference`)
+            
+            // First, update the subscription without proration to preserve billing cycle
+            await stripe.subscriptions.update(existingPlan.stripeSubscriptionId, {
+              items: [{
+                id: subscription.items.data[0].id,
+                price: plan.stripePriceId,
+              }],
+              metadata: {
+                userId: user.id,
+                planId,
+                credits: plan.credits.toString(),
+              },
+              proration_behavior: 'none', // No proration - keep original billing cycle
+            })
+            
+            // Then, create a one-time invoice for the price difference
+            const invoiceItem = await stripe.invoiceItems.create({
+              customer: stripeCustomerId,
+              amount: Math.round(priceDifference * 100), // Convert to cents
+              currency: 'usd',
+              description: `Plan upgrade: ${existingPlan.name} to ${planId} (price difference)`,
+              metadata: {
+                userId: user.id,
+                upgradeFrom: existingPlan.name,
+                upgradeTo: planId,
+                priceDifference: priceDifference.toString()
+              }
+            })
+            
+            // Create and finalize the invoice immediately
+            const invoice = await stripe.invoices.create({
+              customer: stripeCustomerId,
+              auto_advance: true, // Automatically finalize and attempt payment
+              collection_method: 'charge_automatically'
+            })
+            
+            await stripe.invoices.finalizeInvoice(invoice.id)
+            
+            console.log(`✅ Created upgrade invoice ${invoice.id} for $${priceDifference}`)
+            
+            return NextResponse.json({ 
+              upgraded: true,
+              message: 'Plan upgraded successfully',
+              nextInvoice: `Charged $${priceDifference} for upgrade. Billing cycle unchanged.`
+            })
+          }
+          
+        } catch (error) {
+          console.error('❌ Failed to update subscription:', error)
+          return NextResponse.json({ 
+            error: 'Failed to update subscription' 
+          }, { status: 500 })
+        }
+      } else {
+        // This is a new subscription - create checkout session
+        console.log(`🆕 Creating new subscription for plan ${planId}`)
+        
+        sessionConfig.line_items = [{
+          price: plan.stripePriceId,
+          quantity: 1,
+        }]
+
+        // Add subscription metadata
+        sessionConfig.subscription_data = {
+          metadata: {
+            userId: user.id,
+            planId,
+            credits: plan.credits.toString(),
+          },
+        }
       }
     } else if (type === 'credit_pack') {
       const pack = CREDIT_PACKS[planId as keyof typeof CREDIT_PACKS]
@@ -98,15 +215,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
     }
 
-    const session = await stripe.checkout.sessions.create(sessionConfig)
-    
-    console.log('🔍 DEBUG: Checkout session created')
-    console.log('Session ID:', session.id)
-    console.log('Session livemode:', session.livemode)
-    console.log('Session mode:', session.mode)
-    console.log('Price ID used:', sessionConfig.line_items[0]?.price)
+    // Only create checkout session if we haven't already handled subscription upgrade
+    if (sessionConfig.line_items && sessionConfig.line_items.length > 0) {
+      const session = await stripe.checkout.sessions.create(sessionConfig)
+      
+      console.log('🔍 DEBUG: Checkout session created')
+      console.log('Session ID:', session.id)
+      console.log('Session livemode:', session.livemode)
+      console.log('Session mode:', session.mode)
+      console.log('Price ID used:', sessionConfig.line_items[0]?.price)
 
-    return NextResponse.json({ url: session.url })
+      return NextResponse.json({ url: session.url })
+    } else {
+      return NextResponse.json({ error: 'No checkout session created' }, { status: 500 })
+    }
   } catch (error) {
     console.error('Stripe checkout session creation failed:', error)
     return NextResponse.json({ 

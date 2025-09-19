@@ -158,12 +158,13 @@ async function handleCreditPackPurchase(session: Stripe.Checkout.Session) {
     console.log('💳 User updated successfully:', updatedUser)
 
     console.log('💳 Creating credit ledger entry...')
-    // Add credit ledger entry
+    // Add credit ledger entry (credit packs never expire)
     const ledgerEntry = await prisma.creditLedger.create({
       data: {
         userId,
         delta: credits,
         reason: 'purchase',
+        expiresAt: null, // Credit pack purchases never expire
         meta: JSON.stringify({
           stripeSessionId: session.id,
           amount: session.amount_total,
@@ -237,12 +238,16 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     }
   })
 
-  // Add credit ledger entry
+  // Add credit ledger entry (subscription credits expire after 60 days)
+  const expirationDate = new Date()
+  expirationDate.setDate(expirationDate.getDate() + 60)
+  
   await prisma.creditLedger.create({
     data: {
       userId,
       delta: credits,
       reason: 'subscription',
+      expiresAt: expirationDate, // Subscription credits expire after 60 days
       meta: JSON.stringify({
         stripeSubscriptionId: subscription.id,
         planId,
@@ -301,6 +306,10 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       
       console.log(`💳 Credit calculation: ${existingPlan.name}(${oldPlanCredits}) → ${planId}(${newPlanCredits}) = ${creditDifference > 0 ? '+' : ''}${creditDifference} credits`)
       
+      // BUSINESS LOGIC:
+      // - UPGRADES: Add credit difference immediately (user pays prorated amount)
+      // - DOWNGRADES: Don't reduce credits immediately (user keeps existing credits until next cycle)
+      
       // Update the plan to new plan type
       await prisma.plan.update({
         where: { id: existingPlan.id },
@@ -312,8 +321,9 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         }
       })
 
-      // Add/subtract credit difference (not full amount)
-      if (creditDifference !== 0) {
+      // Handle credit changes based on upgrade vs downgrade
+      if (creditDifference > 0) {
+        // UPGRADE: Add credit difference immediately
         await prisma.user.update({
           where: { id: userId },
           data: {
@@ -323,25 +333,57 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
           }
         })
 
-        // Add credit ledger entry for upgrade
+        // Subscription upgrade credits also expire after 60 days
+        const upgradeExpirationDate = new Date()
+        upgradeExpirationDate.setDate(upgradeExpirationDate.getDate() + 60)
+        
         await prisma.creditLedger.create({
           data: {
             userId,
             delta: creditDifference,
-            reason: creditDifference > 0 ? 'subscription_upgrade' : 'subscription_downgrade',
+            reason: 'subscription_upgrade',
+            expiresAt: upgradeExpirationDate, // Upgrade credits expire after 60 days
             meta: JSON.stringify({
               stripeSubscriptionId: subscription.id,
               oldPlan: existingPlan.name,
               newPlan: planId,
               oldCredits: oldPlanCredits,
               newCredits: newPlanCredits,
-              difference: creditDifference
+              creditsAdded: creditDifference,
+              timing: 'immediate'
             })
           }
         })
 
-        console.log(`✅ Plan ${creditDifference > 0 ? 'upgraded' : 'downgraded'} from ${existingPlan.name} to ${planId}, ${creditDifference > 0 ? 'added' : 'removed'} ${Math.abs(creditDifference)} credits`)
+        console.log(`✅ Plan upgraded from ${existingPlan.name} to ${planId}, added ${creditDifference} credits immediately`)
+        
+      } else if (creditDifference < 0) {
+        // DOWNGRADE: Don't reduce credits immediately, just update plan
+        // User keeps existing credits until next billing cycle
+        // Next cycle: They'll get the new plan's credit allocation (handled by invoice.payment_succeeded)
+        await prisma.creditLedger.create({
+          data: {
+            userId,
+            delta: 0, // No immediate credit change - credits preserved
+            reason: 'subscription_downgrade',
+            expiresAt: null, // Downgrade entries don't expire (no credits added)
+            meta: JSON.stringify({
+              stripeSubscriptionId: subscription.id,
+              oldPlan: existingPlan.name,
+              newPlan: planId,
+              oldCredits: oldPlanCredits,
+              newCredits: newPlanCredits,
+              creditDifference: creditDifference,
+              timing: 'no_immediate_change',
+              note: 'Credits preserved during downgrade - no reduction applied'
+            })
+          }
+        })
+
+        console.log(`✅ Plan downgraded from ${existingPlan.name} to ${planId}, existing credits preserved (no immediate reduction)`)
+        
       } else {
+        // SAME CREDITS: Just a plan name change
         console.log(`✅ Plan updated from ${existingPlan.name} to ${planId}, no credit change`)
       }
     } else {
@@ -391,42 +433,131 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   if (invoice.billing_reason === 'subscription_cycle') {
+    console.log(`💰 Processing subscription cycle payment for invoice ${invoice.id}`)
+    
     // Handle recurring subscription payment
     const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string)
     const userId = subscription.metadata?.userId
-    const credits = parseInt(subscription.metadata?.credits || '0')
+    const planId = subscription.metadata?.planId
 
-    if (!userId || !credits) {
-      console.error('Missing metadata in subscription for invoice payment')
+    if (!userId || !planId) {
+      console.error('❌ Missing userId or planId in subscription metadata for invoice payment')
+      console.error('❌ userId:', userId)
+      console.error('❌ planId:', planId)
       return
     }
 
-    // Add monthly credits
+    console.log(`💰 Monthly billing cycle for user ${userId}, plan: ${planId}`)
+
+    // Get the current plan's credit allocation
+    const { SUBSCRIPTION_PLANS } = await import('@/lib/stripe')
+    const planCredits = SUBSCRIPTION_PLANS[planId as keyof typeof SUBSCRIPTION_PLANS]?.credits || 0
+
+    if (!planCredits) {
+      console.error(`❌ No credits configured for plan ${planId}`)
+      return
+    }
+
+    console.log(`💰 Plan ${planId} provides ${planCredits} monthly credits`)
+
+    // FIRST: Expire old subscription credits (59+ days old)
+    await expireOldSubscriptionCredits(userId)
+
+    // THEN: Add monthly credits based on current plan (not old plan)
+    // This ensures downgraded users get the correct amount for their new plan
     await prisma.user.update({
       where: { id: userId },
       data: {
         credits: {
-          increment: credits
+          increment: planCredits
         }
       }
     })
 
-    // Add credit ledger entry
+    // Add credit ledger entry (subscription credits expire after 60 days)
+    const monthlyExpirationDate = new Date()
+    monthlyExpirationDate.setDate(monthlyExpirationDate.getDate() + 60)
+    
     await prisma.creditLedger.create({
       data: {
         userId,
-        delta: credits,
+        delta: planCredits,
         reason: 'subscription',
+        expiresAt: monthlyExpirationDate, // Monthly credits expire after 60 days
         meta: JSON.stringify({
           stripeInvoiceId: invoice.id,
           stripeSubscriptionId: subscription.id,
-          period: 'recurring'
+          planId: planId,
+          period: 'recurring',
+          billingCycle: 'monthly',
+          creditsAdded: planCredits
         })
       }
     })
 
-    console.log(`Added ${credits} monthly credits to user ${userId}`)
+    console.log(`✅ Added ${planCredits} monthly credits to user ${userId} for ${planId} plan`)
   }
+}
+
+async function expireOldSubscriptionCredits(userId: string) {
+  console.log(`🗓️ Checking for expired subscription credits for user ${userId}`)
+  
+  // Find subscription credits that are 59+ days old and not yet expired
+  const cutoffDate = new Date()
+  cutoffDate.setDate(cutoffDate.getDate() - 59) // 59 days ago
+  
+  const expiredCredits = await prisma.creditLedger.findMany({
+    where: {
+      userId,
+      reason: {
+        in: ['subscription', 'subscription_upgrade'] // Both subscription types can expire
+      },
+      expiresAt: {
+        lte: new Date() // Credits that should have expired by now
+      },
+      delta: {
+        gt: 0 // Only positive credit entries (not deductions)
+      }
+    }
+  })
+
+  if (expiredCredits.length === 0) {
+    console.log(`🗓️ No expired subscription credits found for user ${userId}`)
+    return
+  }
+
+  // Calculate total credits to remove
+  const totalExpiredCredits = expiredCredits.reduce((sum, credit) => sum + credit.delta, 0)
+  
+  console.log(`🗓️ Found ${expiredCredits.length} expired credit entries totaling ${totalExpiredCredits} credits`)
+
+  // Remove expired credits from user's account
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      credits: {
+        decrement: totalExpiredCredits
+      }
+    }
+  })
+
+  // Add ledger entry for the expiration
+  await prisma.creditLedger.create({
+    data: {
+      userId,
+      delta: -totalExpiredCredits,
+      reason: 'subscription_expiration',
+      expiresAt: null, // Expiration entries don't expire
+      meta: JSON.stringify({
+        expiredCredits: expiredCredits.length,
+        totalExpired: totalExpiredCredits,
+        expiredEntryIds: expiredCredits.map(c => c.id),
+        reason: 'Subscription credits expired after 60 days (1-month rollover policy)'
+      })
+    }
+  })
+
+  console.log(`✅ Expired ${totalExpiredCredits} subscription credits for user ${userId}`)
 }
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {

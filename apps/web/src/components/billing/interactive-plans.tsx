@@ -107,7 +107,7 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
         throw new Error('Invalid plan selection')
       }
 
-      // Create Stripe checkout session
+      // Create Stripe checkout session or update existing subscription
       const response = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
         headers: {
@@ -125,8 +125,15 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
         throw new Error(data.error || 'Failed to create checkout session')
       }
 
-      // Redirect to Stripe checkout
-      window.location.href = data.url
+      if (data.upgraded) {
+        // Subscription was upgraded/downgraded without checkout
+        alert(`✅ ${data.message}\n\n${data.nextInvoice}`)
+        // Refresh the page to show updated plan
+        window.location.reload()
+      } else {
+        // Redirect to Stripe checkout for new subscriptions
+        window.location.href = data.url
+      }
     } catch (error) {
       console.error('Failed to start checkout:', error)
       alert('Failed to start checkout. Please try again.')
