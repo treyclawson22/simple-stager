@@ -3,7 +3,9 @@ import { requireAuth } from '@/lib/session'
 import { prisma } from '@simple-stager/database'
 import { generateImage } from '@/lib/nano-banana'
 import { addWatermark, createThumbnail } from '@/lib/watermark'
+import { fileStorage } from '@/lib/file-storage'
 import { writeFile, mkdir } from 'fs/promises'
+import fs from 'fs'
 import { join } from 'path'
 import { existsSync } from 'fs'
 
@@ -99,26 +101,60 @@ export async function POST(request: NextRequest) {
         throw new Error('Reenhanced image is empty')
       }
       
-      // Create workflow directory
-      const workflowDir = join(process.cwd(), 'public/uploads', workflowId)
-      if (!existsSync(workflowDir)) {
-        await mkdir(workflowDir, { recursive: true })
+      // Upload reenhanced image to storage (R2 or local fallback)
+      console.log('Uploading reenhanced image to storage...')
+      const reenhancedStorage = await fileStorage.uploadFile(
+        imageBuffer,
+        'reenhanced.jpg',
+        workflowId,
+        'staged'
+      )
+
+      // Create watermarked version in memory
+      console.log('Creating watermarked version...')
+      let watermarkedBuffer: Buffer
+      
+      if (reenhancedStorage.isCloudStorage) {
+        // For cloud storage, we need to apply watermark in memory
+        // Download the image, apply watermark, then upload watermarked version
+        const response = await fetch(reenhancedStorage.url)
+        const originalBuffer = Buffer.from(await response.arrayBuffer())
+        
+        // Apply watermark using temporary files (Sharp limitation)
+        const tempDir = join(process.cwd(), 'temp')
+        if (!existsSync(tempDir)) {
+          await mkdir(tempDir, { recursive: true })
+        }
+        
+        const tempOriginal = join(tempDir, `temp_${workflowId}_original.jpg`)
+        const tempWatermarked = join(tempDir, `temp_${workflowId}_watermarked.jpg`)
+        
+        await writeFile(tempOriginal, originalBuffer)
+        await addWatermark(tempOriginal, tempWatermarked)
+        watermarkedBuffer = await fs.readFile(tempWatermarked)
+        
+        // Clean up temp files
+        await fs.unlink(tempOriginal).catch(() => {})
+        await fs.unlink(tempWatermarked).catch(() => {})
+      } else {
+        // For local storage, create watermarked version normally
+        const localPath = join(process.cwd(), 'apps/web/public', reenhancedStorage.url)
+        const watermarkedPath = localPath.replace('reenhanced.jpg', 'watermarked.jpg')
+        await addWatermark(localPath, watermarkedPath)
+        watermarkedBuffer = await fs.readFile(watermarkedPath)
       }
 
-      // Save the reenhanced image
-      const reenhancedPath = join(workflowDir, 'reenhanced.jpg')
-      await writeFile(reenhancedPath, Buffer.from(imageBuffer))
+      // Upload watermarked version to storage
+      console.log('Uploading watermarked version to storage...')
+      const watermarkedStorage = await fileStorage.uploadFile(
+        watermarkedBuffer,
+        'watermarked.jpg',
+        workflowId,
+        'staged'
+      )
 
-      // Create watermarked version (overwrites previous watermarked.jpg)
-      const watermarkedPath = join(workflowDir, 'watermarked.jpg')
-      await addWatermark(reenhancedPath, watermarkedPath)
-
-      // Create thumbnail
-      const thumbnailPath = join(workflowDir, 'reenhanced_thumb.jpg')
-      await createThumbnail(watermarkedPath, 200)
-
-      const reenhancedUrl = `/uploads/${workflowId}/reenhanced.jpg`
-      const watermarkedUrl = `/uploads/${workflowId}/watermarked.jpg`
+      const reenhancedUrl = reenhancedStorage.url
+      const watermarkedUrl = watermarkedStorage.url
 
       // Create new result record for the reenhancement
       const dbResult = await prisma.result.create({
