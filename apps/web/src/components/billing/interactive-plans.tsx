@@ -233,6 +233,7 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
       })
 
       const data = await response.json()
+      console.log('🔧 DEBUG: Cancel downgrade response:', data)
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to cancel downgrade')
@@ -243,7 +244,8 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
         // Refresh the page to show updated plan
         window.location.reload()
       } else {
-        throw new Error('Unexpected response format')
+        console.error('🔧 DEBUG: Unexpected response structure:', data)
+        throw new Error(`Unexpected response format: ${JSON.stringify(data)}`)
       }
     } catch (error) {
       console.error('Failed to cancel downgrade:', error)
@@ -322,7 +324,7 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
               </h4>
               <div className="flex flex-col items-end">
                 {plan.name === currentPlanName && (
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium mb-1 ${
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium mb-1 text-center ${
                     isFreePlan 
                       ? 'bg-purple-100 text-purple-800' 
                       : isPendingDowngrade
