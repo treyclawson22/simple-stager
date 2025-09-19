@@ -186,6 +186,54 @@ export async function POST(request: NextRequest) {
               
               console.log(`✅ Payment successful - subscription updated to ${planId}`)
               
+              // CRITICAL: Also update our database immediately (don't wait for webhooks)
+              const currentPlan = SUBSCRIPTION_PLANS[existingPlan.name as keyof typeof SUBSCRIPTION_PLANS]
+              const newPlan = plan
+              const creditDifference = newPlan.credits - currentPlan.credits
+              
+              // Update the plan in our database
+              await prisma.plan.update({
+                where: { id: existingPlan.id },
+                data: {
+                  name: planId,
+                  status: 'active',
+                }
+              })
+              
+              // Add the credit difference
+              await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                  credits: {
+                    increment: creditDifference
+                  }
+                }
+              })
+              
+              // Add credit ledger entry
+              const upgradeExpirationDate = new Date()
+              upgradeExpirationDate.setDate(upgradeExpirationDate.getDate() + 60)
+              
+              await prisma.creditLedger.create({
+                data: {
+                  userId: user.id,
+                  delta: creditDifference,
+                  reason: 'subscription_upgrade',
+                  expiresAt: upgradeExpirationDate,
+                  meta: JSON.stringify({
+                    stripeSubscriptionId: existingPlan.stripeSubscriptionId,
+                    oldPlan: existingPlan.name,
+                    newPlan: planId,
+                    oldCredits: currentPlan.credits,
+                    newCredits: newPlan.credits,
+                    creditsAdded: creditDifference,
+                    timing: 'immediate_after_payment'
+                  })
+                }
+              })
+              
+              console.log(`✅ Database updated: ${existingPlan.name} → ${planId}, added ${creditDifference} credits`)
+              
             } catch (paymentError) {
               console.error('❌ Invoice payment failed:', paymentError)
               console.log('🔧 Subscription upgrade completed but payment failed')
