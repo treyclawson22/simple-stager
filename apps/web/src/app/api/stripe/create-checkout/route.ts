@@ -144,16 +144,24 @@ export async function POST(request: NextRequest) {
               }
             })
             
-            // Create and finalize the invoice immediately
+            // Create and pay the invoice immediately
             const invoice = await stripe.invoices.create({
               customer: stripeCustomerId,
               auto_advance: true, // Automatically finalize and attempt payment
               collection_method: 'charge_automatically'
             })
             
-            await stripe.invoices.finalizeInvoice(invoice.id)
+            // Finalize the invoice
+            const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id)
+            
+            // Explicitly attempt payment
+            const paidInvoice = await stripe.invoices.pay(finalizedInvoice.id, {
+              paid_out_of_band: false
+            })
             
             console.log(`✅ Created upgrade invoice ${invoice.id} for $${priceDifference}`)
+            console.log(`💳 Invoice payment status: ${paidInvoice.status}`)
+            console.log(`💳 Invoice amount paid: $${(paidInvoice.amount_paid || 0) / 100}`)
             
             return NextResponse.json({ 
               upgraded: true,
