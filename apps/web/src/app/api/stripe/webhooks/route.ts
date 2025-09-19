@@ -87,7 +87,17 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('❌ Webhook handler error:', error)
     console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace')
-    return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 })
+    console.error('❌ Event type:', event?.type)
+    console.error('❌ Event ID:', event?.id)
+    
+    // Return 200 to prevent Stripe from retrying, but log the error
+    // This prevents webhook failures from blocking user payments
+    return NextResponse.json({ 
+      received: true, 
+      error: 'Handler failed but acknowledged',
+      eventType: event?.type,
+      eventId: event?.id
+    }, { status: 200 })
   }
 }
 
@@ -176,21 +186,22 @@ async function handleCreditPackPurchase(session: Stripe.Checkout.Session) {
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   console.log(`🎯 Processing subscription.created: ${subscription.id}`)
   
-  const userId = subscription.metadata?.userId
-  const planId = subscription.metadata?.planId
-  const credits = parseInt(subscription.metadata?.credits || '0')
+  try {
+    const userId = subscription.metadata?.userId
+    const planId = subscription.metadata?.planId
+    const credits = parseInt(subscription.metadata?.credits || '0')
 
-  console.log('Subscription metadata:', {
-    userId,
-    planId,
-    credits,
-    subscriptionId: subscription.id
-  })
+    console.log('Subscription metadata:', {
+      userId,
+      planId,
+      credits,
+      subscriptionId: subscription.id
+    })
 
-  if (!userId || !planId || !credits) {
-    console.error('❌ Missing metadata in subscription:', subscription.metadata)
-    return
-  }
+    if (!userId || !planId || !credits) {
+      console.error('❌ Missing metadata in subscription:', subscription.metadata)
+      throw new Error(`Missing metadata: userId=${userId}, planId=${planId}, credits=${credits}`)
+    }
 
   // Create or update plan record
   const plan = await prisma.plan.upsert({
@@ -241,6 +252,11 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   })
 
   console.log(`Created subscription ${subscription.id} for user ${userId} with ${credits} credits`)
+  
+  } catch (error) {
+    console.error(`❌ handleSubscriptionCreated failed for ${subscription.id}:`, error)
+    throw error // Re-throw to be caught by main handler
+  }
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
