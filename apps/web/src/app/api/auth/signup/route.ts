@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   console.log('🚀 Starting signup process...')
 
   try {
-    const { email, password, name } = await request.json()
+    const { email, password, name, specialReferralCode } = await request.json()
 
     if (!email || !password) {
       return NextResponse.json(
@@ -39,10 +39,32 @@ export async function POST(request: NextRequest) {
         throw new Error('User already exists with this email')
       }
 
+      // Check if special referral code is provided and valid
+      let specialCodeData = null
+      if (specialReferralCode) {
+        const normalizedCode = specialReferralCode.toUpperCase().trim()
+        console.log(`🎁 Checking special referral code: ${normalizedCode}`)
+        
+        specialCodeData = await prisma.specialReferralCode.findUnique({
+          where: { code: normalizedCode }
+        })
+
+        if (!specialCodeData) {
+          throw new Error('Invalid special referral code')
+        }
+
+        if (specialCodeData.usedBy) {
+          throw new Error('This special referral code has already been used')
+        }
+      }
+
       console.log('🔐 Hashing password...')
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 12)
       const referralCode = generateReferralCode()
+
+      // Calculate initial credits (3 base + special code bonus if applicable)
+      const initialCredits = 3 + (specialCodeData ? specialCodeData.credits : 0)
 
       console.log('👤 Creating user record...')
       // Create user
@@ -51,7 +73,7 @@ export async function POST(request: NextRequest) {
           email,
           name: name || null,
           authProvider: 'password',
-          credits: 3,
+          credits: initialCredits,
           referralCode,
         }
       })
@@ -75,6 +97,32 @@ export async function POST(request: NextRequest) {
           meta: JSON.stringify({ message: 'Welcome! Free trial credits' }),
         },
       })
+
+      // If special referral code was used, add those credits and mark code as used
+      if (specialCodeData) {
+        console.log(`🎁 Adding special referral code credits: ${specialCodeData.credits}`)
+        
+        await prisma.creditLedger.create({
+          data: {
+            userId: newUser.id,
+            delta: specialCodeData.credits,
+            reason: 'special_referral',
+            meta: JSON.stringify({
+              code: specialCodeData.code,
+              description: specialCodeData.description || 'Special VIP Credits'
+            }),
+          },
+        })
+
+        // Mark special code as used
+        await prisma.specialReferralCode.update({
+          where: { id: specialCodeData.id },
+          data: {
+            usedBy: newUser.id,
+            usedAt: new Date()
+          }
+        })
+      }
 
       console.log(`✅ User created successfully: ${newUser.id}`)
       return {

@@ -11,6 +11,8 @@ function SignupForm() {
   const [isValidReferral, setIsValidReferral] = useState(false)
   const [isCheckingReferral, setIsCheckingReferral] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [referralType, setReferralType] = useState<'regular' | 'special' | null>(null)
+  const [specialCredits, setSpecialCredits] = useState(0)
   
   // Form state
   const [formData, setFormData] = useState({
@@ -39,15 +41,36 @@ function SignupForm() {
     setIsCheckingReferral(true)
     
     try {
-      // TODO: Implement actual API call to validate referral code
-      console.log(`Validating referral code: ${code}`)
+      // First check if it's a special referral code (100 credits)
+      const specialResponse = await fetch('/api/special-referral/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code.toUpperCase().trim() })
+      })
       
-      // Simulate API call
+      if (specialResponse.ok) {
+        const specialData = await specialResponse.json()
+        if (specialData.isValid) {
+          setIsValidReferral(true)
+          setReferralType('special')
+          setSpecialCredits(specialData.credits)
+          return
+        }
+      }
+      
+      // If not special, check regular referral codes (25% discount)
+      console.log(`Validating regular referral code: ${code}`)
+      
+      // Simulate API call for regular referral codes
       await new Promise(resolve => setTimeout(resolve, 500))
       
-      // Mock validation - any code 3+ characters is valid (except self-referral)
+      // Mock validation - any code 3+ characters is valid for regular referrals
       const isValid = code.length >= 3
       setIsValidReferral(isValid)
+      if (isValid) {
+        setReferralType('regular')
+        setSpecialCredits(0)
+      }
     } catch (error) {
       setIsValidReferral(false)
       console.error('Error validating referral code:', error)
@@ -59,6 +82,8 @@ function SignupForm() {
   const handleReferralCodeChange = (code: string) => {
     const upperCode = code.toUpperCase()
     setReferralCode(upperCode)
+    setReferralType(null)
+    setSpecialCredits(0)
     
     if (upperCode.trim()) {
       validateReferralCode(upperCode)
@@ -121,6 +146,7 @@ function SignupForm() {
           email: formData.email,
           password: formData.password,
           name: `${formData.firstName} ${formData.lastName}`.trim(),
+          specialReferralCode: referralType === 'special' ? referralCode : null,
         }),
       })
 
@@ -207,10 +233,17 @@ function SignupForm() {
           {referralCode && (
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center space-x-3 mb-3">
-                <div className="text-blue-600">🎁</div>
+                <div className="text-blue-600">{referralType === 'special' ? '💎' : '🎁'}</div>
                 <div>
-                  <h4 className="text-sm font-medium text-blue-900">You're invited!</h4>
-                  <p className="text-xs text-blue-700">Get 25% off your first month subscription</p>
+                  <h4 className="text-sm font-medium text-blue-900">
+                    {referralType === 'special' ? 'VIP Invitation!' : 'You\'re invited!'}
+                  </h4>
+                  <p className="text-xs text-blue-700">
+                    {referralType === 'special' 
+                      ? `Get ${specialCredits} free credits!` 
+                      : 'Get 25% off your first month subscription'
+                    }
+                  </p>
                 </div>
               </div>
               
@@ -239,7 +272,10 @@ function SignupForm() {
               
               {isValidReferral && (
                 <p className="text-xs text-green-600 mt-2 font-medium">
-                  🎉 You'll get 25% off your first subscription!
+                  {referralType === 'special' 
+                    ? `💎 You'll get ${specialCredits} free credits added to your account!`
+                    : '🎉 You\'ll get 25% off your first subscription!'
+                  }
                 </p>
               )}
             </div>
@@ -368,7 +404,10 @@ function SignupForm() {
                   </div>
                   {isValidReferral && (
                     <p className="text-xs text-green-600 mt-1">
-                      You'll get 25% off your first subscription!
+                      {referralType === 'special' 
+                        ? `You'll get ${specialCredits} free credits!`
+                        : 'You\'ll get 25% off your first subscription!'
+                      }
                     </p>
                   )}
                 </div>
@@ -390,7 +429,8 @@ function SignupForm() {
                 ) : (
                   <>
                     Create account
-                    {isValidReferral && ' (with 25% discount!)'}
+                    {isValidReferral && referralType === 'special' && ` (with ${specialCredits} free credits!)`}
+                    {isValidReferral && referralType === 'regular' && ' (with 25% discount!)'}
                   </>
                 )}
               </button>

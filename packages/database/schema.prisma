@@ -139,3 +139,16 @@ model Password {
   
   @@map("user_passwords")
 }
+
+model SpecialReferralCode {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  credits     Int       @default(100)
+  description String?   // e.g., "VIP Realtor Program"
+  usedBy      String?   // User ID who used this code
+  usedAt      DateTime? // When it was used
+  createdAt   DateTime  @default(now())
+  createdBy   String?   // Admin who created it
+  
+  @@map("special_referral_codes")
+}
