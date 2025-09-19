@@ -33,7 +33,7 @@ export function DashboardNav({ user }: DashboardNavProps) {
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
               <Link href="/dashboard">
-                <img src="/logo.png" alt="SimpleStager" className="h-12 w-auto" />
+                <img src="/logo.png" alt="SimpleStager" className="h-[41px] w-auto" />
               </Link>
             </div>
             
