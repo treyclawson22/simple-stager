@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { executeWithRobustConnection } from '@/lib/robust-db'
 
+// Special referral code validation endpoint
+
 export async function POST(request: NextRequest) {
   try {
     const { code } = await request.json()
