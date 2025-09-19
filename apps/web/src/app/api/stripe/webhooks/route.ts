@@ -227,7 +227,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     }
   })
 
-  // Add initial subscription credits
+  // Add initial subscription credits (full amount for new subscriptions)
   await prisma.user.update({
     where: { id: userId },
     data: {
@@ -293,6 +293,14 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     if (existingPlan && planId && existingPlan.name !== planId) {
       console.log(`🔄 Plan upgrade detected: ${existingPlan.name} → ${planId}`)
       
+      // Get credit amounts for old and new plans
+      const { SUBSCRIPTION_PLANS } = await import('@/lib/stripe')
+      const oldPlanCredits = SUBSCRIPTION_PLANS[existingPlan.name as keyof typeof SUBSCRIPTION_PLANS]?.credits || 0
+      const newPlanCredits = SUBSCRIPTION_PLANS[planId as keyof typeof SUBSCRIPTION_PLANS]?.credits || 0
+      const creditDifference = newPlanCredits - oldPlanCredits
+      
+      console.log(`💳 Credit calculation: ${existingPlan.name}(${oldPlanCredits}) → ${planId}(${newPlanCredits}) = ${creditDifference > 0 ? '+' : ''}${creditDifference} credits`)
+      
       // Update the plan to new plan type
       await prisma.plan.update({
         where: { id: existingPlan.id },
@@ -304,13 +312,13 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         }
       })
 
-      // Add credits for the new plan if specified
-      if (credits > 0) {
+      // Add/subtract credit difference (not full amount)
+      if (creditDifference !== 0) {
         await prisma.user.update({
           where: { id: userId },
           data: {
             credits: {
-              increment: credits
+              increment: creditDifference
             }
           }
         })
@@ -319,18 +327,22 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         await prisma.creditLedger.create({
           data: {
             userId,
-            delta: credits,
-            reason: 'subscription_upgrade',
+            delta: creditDifference,
+            reason: creditDifference > 0 ? 'subscription_upgrade' : 'subscription_downgrade',
             meta: JSON.stringify({
               stripeSubscriptionId: subscription.id,
               oldPlan: existingPlan.name,
               newPlan: planId,
-              period: 'upgrade'
+              oldCredits: oldPlanCredits,
+              newCredits: newPlanCredits,
+              difference: creditDifference
             })
           }
         })
 
-        console.log(`✅ Plan upgraded from ${existingPlan.name} to ${planId}, added ${credits} credits`)
+        console.log(`✅ Plan ${creditDifference > 0 ? 'upgraded' : 'downgraded'} from ${existingPlan.name} to ${planId}, ${creditDifference > 0 ? 'added' : 'removed'} ${Math.abs(creditDifference)} credits`)
+      } else {
+        console.log(`✅ Plan updated from ${existingPlan.name} to ${planId}, no credit change`)
       }
     } else {
       // Just update existing plan status/dates
