@@ -90,6 +90,47 @@ export function InteractivePlans({ user }: InteractivePlansProps) {
   const handleConfirmChange = async () => {
     if (!selectedPlan) return
     
+    // Get plan pricing info for confirmation
+    const selectedPlanData = plans.find(p => p.name === selectedPlan)
+    const currentPlan = user?.plans?.[0]
+    
+    if (currentPlan && selectedPlanData) {
+      const currentPlanData = plans.find(p => p.name === currentPlan.name)
+      if (currentPlanData) {
+        const priceDifference = selectedPlanData.price - currentPlanData.price
+        
+        if (priceDifference > 0) {
+          // Confirm upgrade charge
+          const confirmed = confirm(
+            `Upgrade Confirmation\n\n` +
+            `You are upgrading from ${currentPlanData.name} ($${currentPlanData.price}/month) to ${selectedPlanData.name} ($${selectedPlanData.price}/month).\n\n` +
+            `• You will be charged $${priceDifference} today (price difference)\n` +
+            `• Your next billing cycle will be $${selectedPlanData.price}/month\n` +
+            `• Your billing date remains unchanged\n\n` +
+            `Continue with upgrade?`
+          )
+          
+          if (!confirmed) {
+            return
+          }
+        } else if (priceDifference < 0) {
+          // Confirm downgrade
+          const confirmed = confirm(
+            `Downgrade Confirmation\n\n` +
+            `You are downgrading from ${currentPlanData.name} ($${currentPlanData.price}/month) to ${selectedPlanData.name} ($${selectedPlanData.price}/month).\n\n` +
+            `• No charge today\n` +
+            `• Your next billing cycle will be $${selectedPlanData.price}/month\n` +
+            `• You will keep your existing credits\n\n` +
+            `Continue with downgrade?`
+          )
+          
+          if (!confirmed) {
+            return
+          }
+        }
+      }
+    }
+    
     setIsConfirming(true)
     
     try {
