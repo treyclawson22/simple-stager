@@ -37,6 +37,7 @@ model Plan {
   name                 String    // entry | showcase | prime | prestige | portfolio
   pendingPlan          String?   // For downgrades: the plan that will activate next billing cycle
   stripeSubscriptionId String?   @unique
+  stripeScheduleId     String?   // For pending downgrades: Stripe schedule ID
   status               String?   // active | canceled | past_due | pending_downgrade | etc.
   currentPeriodStart   DateTime?
   currentPeriodEnd     DateTime?
