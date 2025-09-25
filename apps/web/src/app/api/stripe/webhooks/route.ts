@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@simple-stager/database'
+import { highLevelCRM } from '@/lib/highlevel'
 import Stripe from 'stripe'
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
@@ -257,6 +258,33 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   })
 
   console.log(`Created subscription ${subscription.id} for user ${userId} with ${credits} credits`)
+
+  // Integrate with HighLevel CRM - move to subscription funnel
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, name: true }
+    })
+
+    if (user?.email) {
+      console.log('🎯 Syncing subscription to HighLevel CRM...')
+      const crmResult = await highLevelCRM.processSubscription({
+        email: user.email,
+        planName: planId,
+        amount: subscription.items?.data[0]?.price?.unit_amount ? 
+          subscription.items.data[0].price.unit_amount / 100 : undefined
+      })
+
+      if (crmResult.success) {
+        console.log(`✅ HighLevel CRM subscription sync successful - Opportunity ID: ${crmResult.opportunityId}`)
+      } else {
+        console.log('⚠️ HighLevel CRM subscription sync failed')
+      }
+    }
+  } catch (crmError) {
+    console.error('❌ HighLevel CRM subscription integration error:', crmError)
+    // Don't fail the webhook if CRM integration fails
+  }
   
   } catch (error) {
     console.error(`❌ handleSubscriptionCreated failed for ${subscription.id}:`, error)

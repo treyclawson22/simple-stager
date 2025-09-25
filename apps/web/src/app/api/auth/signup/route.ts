@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateReferralCode } from '@simple-stager/shared'
 import { executeWithRobustConnection } from '@/lib/robust-db'
+import { highLevelCRM } from '@/lib/highlevel'
 import bcrypt from 'bcryptjs'
 
 export async function POST(request: NextRequest) {
@@ -147,6 +148,36 @@ export async function POST(request: NextRequest) {
         name: newUser.name,
       }
     }, 15) // Maximum 15 attempts with robust connection strategy
+
+    // Integrate with HighLevel CRM - create/update lead
+    console.log('🎯 Syncing user to HighLevel CRM...')
+    try {
+      const crmResult = await highLevelCRM.processSignup({
+        email: user.email,
+        name: user.name || undefined,
+        firstName: name?.split(' ')[0],
+        lastName: name?.split(' ').slice(1).join(' ') || undefined
+      })
+
+      if (crmResult.success) {
+        console.log(`✅ HighLevel CRM sync successful - Contact ID: ${crmResult.contactId}, New Lead: ${crmResult.isNewLead}`)
+        
+        // Add to "Created Account" funnel if we have a contact ID
+        if (crmResult.contactId) {
+          const funnelResult = await highLevelCRM.addToCreatedAccountFunnel(crmResult.contactId)
+          if (funnelResult) {
+            console.log('✅ User added to "Created Account" funnel')
+          } else {
+            console.log('⚠️ Could not add user to "Created Account" funnel - pipeline/stage not found')
+          }
+        }
+      } else {
+        console.log('⚠️ HighLevel CRM sync failed - continuing with signup')
+      }
+    } catch (crmError) {
+      console.error('❌ HighLevel CRM integration error:', crmError)
+      // Don't fail the signup if CRM integration fails
+    }
 
     const duration = Date.now() - startTime
     console.log(`🎉 Signup completed successfully in ${duration}ms`)
