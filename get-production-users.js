@@ -1,11 +1,11 @@
 const { PrismaClient } = require('@prisma/client');
 
 async function getProductionUsers() {
-  // Use production database URL
+  // Use production database URL with public endpoint
   const prisma = new PrismaClient({
     datasources: {
       db: {
-        url: "postgresql://postgres:zQViwzixCJlzFQDxeIxWOmsWMpkCDYya@postgres.railway.internal:5432/railway"
+        url: "postgresql://postgres:zQViwzixCJlzFQDxeIxWOmsWMpkCDYya@crossover.proxy.rlwy.net:28966/railway"
       }
     }
   });
